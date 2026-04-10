@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAAPOA Member Info</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0B1A33;--gold:#C6973F;--gold-light:#D4AD5E;--gold-dim:rgba(198,151,63,.15);--red:#C0392B;--red-dim:rgba(192,57,43,.12);--green:#27AE60;--green-dim:rgba(39,174,96,.12);--text:#E8E8EC;--text-dim:#8A8FA0;--text-muted:#5A6070;--surface:#0F1F38;--surface-raised:#152A4A;--border:rgba(198,151,63,.12);--border-bright:rgba(198,151,63,.3);--radius:8px;--radius-lg:12px;--shadow:0 4px 24px rgba(0,0,0,.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.container{width:440px;max-width:100%}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 28px;box-shadow:var(--shadow);margin-bottom:16px}
+.brand{text-align:center;margin-bottom:24px}
+.brand .badge{width:56px;height:56px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:var(--navy);margin-bottom:12px}
+.brand h1{font-size:20px;font-weight:700}
+.brand p{font-size:13px;color:var(--text-dim);margin-top:4px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--text-dim);margin-bottom:4px}
+.field input,.field select{width:100%;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
+.field input:focus,.field select:focus{border-color:var(--gold)}
+.field input[readonly]{opacity:.6;cursor:default}
+.field select{cursor:pointer}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-row.tri{grid-template-columns:2fr 1fr 1fr}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.btn-gold{background:var(--gold);color:var(--navy)}
+.btn-gold:hover{background:var(--gold-light)}
+.btn-gold:disabled{opacity:.5;cursor:not-allowed}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--border-bright)}
+.err{background:var(--red-dim);color:var(--red);padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:16px}
+.ok{background:var(--green-dim);color:var(--green);padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:16px}
+.warn{background:rgba(230,126,34,.12);color:#E67E22;padding:8px 12px;border-radius:var(--radius);font-size:12px;margin-bottom:16px;line-height:1.5}
+.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin:20px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.section-title:first-child{margin-top:0}
+.member-header{display:flex;gap:14px;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--navy);flex-shrink:0}
+.member-name{font-size:18px;font-weight:700}
+.member-detail{font-size:13px;color:var(--text-dim);margin-top:2px}
+.footer{text-align:center;font-size:11px;color:var(--text-muted);padding:8px}
+.info-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-label{color:var(--text-dim);min-width:90px;font-size:12px}
+.info-val{color:var(--text)}
+.info-val a{color:var(--gold);text-decoration:none}
+.info-val a:hover{text-decoration:underline}
+.tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-dim);background:var(--navy);transition:all .15s;border:none;font-family:inherit}
+.tab:hover{color:var(--text)}
+.tab.on{background:var(--gold-dim);color:var(--gold)}
+@media(max-width:480px){.field-row{grid-template-columns:1fr}.field-row.tri{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwd4ALUT4TxR8BXa0hM1v8m7VfnCXbCljYOvSHSNfDFUrqtZrffC4SnuG_h5om3Zq1l/exec';
+const BLOCKED = ['@lawa.org','@lacity.org','@lacity.com','@lapd.online'];
+
+const RANK_OPTIONS = [
+  {group:'Officers — MOU 30',items:[{label:'Specialist (MOU 30)',rank:'Specialist',mou:'MOU 30',dept:'Airport Police'},{label:'Officer PI (MOU 30)',rank:'Officer PI',mou:'MOU 30',dept:'Airport Police'},{label:'Officer PII (MOU 30)',rank:'Officer PII',mou:'MOU 30',dept:'Airport Police'},{label:'Officer PIII (MOU 30)',rank:'Officer PIII',mou:'MOU 30',dept:'Airport Police'}]},
+  {group:'Officers — MOU 28',items:[{label:'Officer PII (MOU 28)',rank:'Officer PII',mou:'MOU 28',dept:'LAPD'},{label:'Officer PIII (MOU 28)',rank:'Officer PIII',mou:'MOU 28',dept:'LAPD'}]},
+  {group:'Supervisors — MOU 39',items:[{label:'Sergeant (MOU 39)',rank:'Sergeant',mou:'MOU 39',dept:'Airport Police'},{label:'Lieutenant (MOU 39)',rank:'Lieutenant',mou:'MOU 39',dept:'Airport Police'}]},
+  {group:'Supervisor — MOU 28',items:[{label:'Sergeant (MOU 28)',rank:'Sergeant',mou:'MOU 28',dept:'LAPD'}]},
+  {group:'Park Rangers — MOU 65',items:[{label:'Park Ranger (MOU 65)',rank:'Park Ranger',mou:'MOU 65',dept:'Park Rangers'},{label:'Park Ranger Supervisor (MOU 65)',rank:'Park Ranger Supervisor',mou:'MOU 65',dept:'Park Rangers'},{label:'Commanding Park Ranger (MOU 65)',rank:'Commanding Park Ranger',mou:'MOU 65',dept:'Park Rangers'}]}
+];
+
+const ASSIGN_30_39 = [{group:'PSS',items:['PSS Watch 1','PSS Watch 2','PSS Watch 3']},{group:'Specialized Units',items:['APIC','Court Liaison','CTF','Dignitary Protection','ESU','K9s','Motors','Range','Special Projects','Training','VAAU']},{group:'Other',items:['My unit not listed']}];
+const ASSIGN_28 = [{group:'Municipal Police',items:['Daily Posts',"Mayor's Post",'MLO-CRO','MLO-Sgt Arms']}];
+const ASSIGN_65 = [{group:'Ranger Duties',items:['Griffith / Metro RGN','Valley RGN','Observatory','H.R.S.T.','Harbor RGN']}];
+
+let state = {view:'login',member:null,token:null,row:null,loading:false,error:'',success:'',tab:'info'};
+
+// Restore session
+try {
+  const s = localStorage.getItem('laapoa_member_session');
+  if (s) { const d = JSON.parse(s); Object.assign(state, d, {view:'info',loading:false,error:'',success:''}); }
+} catch(e) {}
+
+function setState(updates) {
+  Object.assign(state, updates);
+  // Persist session
+  if (state.token && state.member) {
+    try { localStorage.setItem('laapoa_member_session', JSON.stringify({member:state.member,token:state.token,row:state.row,tab:state.tab})); } catch(e) {}
+  }
+  render();
+}
+
+function clearSession() {
+  try { localStorage.removeItem('laapoa_member_session'); } catch(e) {}
+  state = {view:'login',member:null,token:null,row:null,loading:false,error:'',success:'',tab:'info'};
+  render();
+}
+
+async function apiCall(action, payload) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action, ...payload })
+  });
+  return await res.json();
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const lastName = document.getElementById('ln').value.trim();
+  const cid = document.getElementById('cid').value.trim();
+  const dob = document.getElementById('dob').value;
+  if (!lastName || !cid || !dob) { setState({error:'All fields are required'}); return; }
+  setState({loading:true, error:''});
+  const res = await apiCall('login', {lastName, cid, dob});
+  if (res.error) { setState({loading:false, error:res.error}); return; }
+  setState({view:'info', member:res.member, token:res.token, row:res.row, loading:false, error:'', tab:'info'});
+}
+
+async function handleUpdate(e) {
+  e.preventDefault();
+  const email = document.getElementById('ue')?.value?.trim() || '';
+  if (email) {
+    const lower = email.toLowerCase();
+    for (const d of BLOCKED) {
+      if (lower.endsWith(d)) { setState({error:'Work email addresses ('+d+') cannot be used. Please enter a personal email.'}); return; }
+    }
+  }
+  const updates = {
+    rank: state.member.rank, mou: state.member.mou, department: state.member.department,
+    assignment: document.getElementById('ua')?.value || '',
+    phone: document.getElementById('up')?.value?.trim() || '',
+    email: email,
+    address: document.getElementById('uaddr')?.value?.trim() || '',
+    city: document.getElementById('ucity')?.value?.trim() || '',
+    state: document.getElementById('ust')?.value?.trim() || '',
+    zip: document.getElementById('uzip')?.value?.trim() || '',
+  };
+  setState({loading:true, error:'', success:''});
+  const res = await apiCall('update', {token:state.token, row:state.row, updates});
+  if (res.error) {
+    if (res.error.includes('expired') || res.error.includes('session')) { clearSession(); return; }
+    setState({loading:false, error:res.error}); return;
+  }
+  Object.assign(state.member, updates);
+  setState({loading:false, success:'Your information has been updated successfully.', error:'', tab:'info'});
+}
+
+function handleRankChange(label) {
+  let found = null;
+  RANK_OPTIONS.forEach(g => g.items.forEach(i => { if(i.label===label) found=i; }));
+  if (found) {
+    state.member.rank = found.rank;
+    state.member.mou = found.mou;
+    state.member.department = found.dept;
+    state.member.assignment = '';
+    setState({});
+  }
+}
+
+function rankToLabel(rank, mou) {
+  let match = '';
+  RANK_OPTIONS.forEach(g => g.items.forEach(i => { if(i.rank===rank && i.mou===mou) match=i.label; }));
+  return match;
+}
+
+function getAssignOptions(mou) {
+  if (mou === 'MOU 30' || mou === 'MOU 39') return ASSIGN_30_39;
+  if (mou === 'MOU 28') return ASSIGN_28;
+  if (mou === 'MOU 65') return ASSIGN_65;
+  return [];
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function render() {
+  const app = document.getElementById('app');
+
+  if (state.view === 'login') {
+    app.innerHTML =
+      '<div class="card">' +
+        '<div class="brand"><div class="badge">LA</div><h1>LAAPOA</h1><p>Member Info Portal</p></div>' +
+        (state.error ? '<div class="err">'+esc(state.error)+'</div>' : '') +
+        '<div class="field"><label>Last Name</label><input id="ln" type="text" placeholder="Your last name" autocapitalize="words"></div>' +
+        '<div class="field"><label>City Employee ID (CID)</label><input id="cid" type="text" placeholder="Your CID number"></div>' +
+        '<div class="field"><label>Date of Birth</label><input id="dob" type="date"></div>' +
+        '<button class="btn btn-gold" id="loginBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Verifying...':'Sign In')+'</button>' +
+      '</div>' +
+      '<div class="footer">LAAPOA Member Info</div>';
+    document.getElementById('loginBtn').addEventListener('click', handleLogin);
+    ['ln','cid','dob'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(e); });
+    });
+    return;
+  }
+
+  const m = state.member;
+  const initials = (m.name||'').split(' ').map(w=>w[0]).filter(Boolean).slice(0,2).join('').toUpperCase();
+
+  // Info view vs Edit view
+  if (state.tab === 'info') {
+    const fmtAddr = [m.address, [m.city,m.state,m.zip].filter(Boolean).join(', ')].filter(Boolean).join('\\n');
+    app.innerHTML =
+      '<div class="card">' +
+        '<div class="member-header">' +
+          '<div class="avatar">'+initials+'</div>' +
+          '<div><div class="member-name">'+esc(m.name)+'</div>' +
+          '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+(m.department?' · '+esc(m.department):'')+'</div></div>' +
+        '</div>' +
+        (state.success ? '<div class="ok">'+esc(state.success)+'</div>' : '') +
+        '<div class="tabs">' +
+          '<button class="tab on" id="tabInfo">My Info</button>' +
+          '<button class="tab" id="tabEdit">Update Info</button>' +
+        '</div>' +
+        '<div class="section-title">Employment</div>' +
+        '<div class="info-row"><span class="info-label">Rank</span><span class="info-val">'+esc(m.rank||'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">MOU</span><span class="info-val">'+esc(m.mou||'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">Department</span><span class="info-val">'+esc(m.department||'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">Assignment</span><span class="info-val">'+esc(m.assignment||'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">CID</span><span class="info-val" style="font-family:\'JetBrains Mono\',monospace">'+esc(m.cid||'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">Status</span><span class="info-val">'+esc(m.memberStatus||'—')+'</span></div>' +
+        '<div class="section-title">Contact</div>' +
+        '<div class="info-row"><span class="info-label">Phone</span><span class="info-val">'+(m.phone?'<a href="tel:'+esc(m.phone)+'">'+esc(m.phone)+'</a>':'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">Email</span><span class="info-val">'+(m.email?'<a href="mailto:'+esc(m.email)+'">'+esc(m.email)+'</a>':'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">Address</span><span class="info-val" style="white-space:pre-line">'+(fmtAddr?esc(fmtAddr).replace(/\\n/g,'\n'):'—')+'</span></div>' +
+        '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
+      '</div>' +
+      '<div class="footer">LAAPOA Member Info</div>';
+    document.getElementById('tabEdit').addEventListener('click', ()=>setState({tab:'edit',success:''}));
+    document.getElementById('logoutBtn').addEventListener('click', clearSession);
+    return;
+  }
+
+  // Edit view
+  const curRankLabel = rankToLabel(m.rank, m.mou);
+  const assignOpts = getAssignOptions(m.mou);
+
+  let rankHtml = '<option value="">— Select —</option>';
+  RANK_OPTIONS.forEach(g => {
+    rankHtml += '<optgroup label="'+g.group+'">';
+    g.items.forEach(i => { rankHtml += '<option value="'+i.label+'"'+(i.label===curRankLabel?' selected':'')+'>'+i.label+'</option>'; });
+    rankHtml += '</optgroup>';
+  });
+
+  let assignHtml = '<option value="">— Select —</option>';
+  assignOpts.forEach(g => {
+    assignHtml += '<optgroup label="'+g.group+'">';
+    g.items.forEach(i => { assignHtml += '<option value="'+esc(i)+'"'+(i===m.assignment?' selected':'')+'>'+esc(i)+'</option>'; });
+    assignHtml += '</optgroup>';
+  });
+
+  app.innerHTML =
+    '<div class="card">' +
+      '<div class="member-header">' +
+        '<div class="avatar">'+initials+'</div>' +
+        '<div><div class="member-name">'+esc(m.name)+'</div>' +
+        '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+(m.department?' · '+esc(m.department):'')+'</div></div>' +
+      '</div>' +
+      (state.error ? '<div class="err">'+esc(state.error)+'</div>' : '') +
+      (state.success ? '<div class="ok">'+esc(state.success)+'</div>' : '') +
+      '<div class="tabs">' +
+        '<button class="tab" id="tabInfo">My Info</button>' +
+        '<button class="tab on" id="tabEdit">Update Info</button>' +
+      '</div>' +
+      '<div class="section-title">Rank & Assignment</div>' +
+      '<div class="field"><label>Rank</label><select id="ur">'+rankHtml+'</select></div>' +
+      '<div class="field-row">' +
+        '<div class="field"><label>MOU</label><input type="text" value="'+esc(m.mou)+'" readonly></div>' +
+        '<div class="field"><label>Department</label><input type="text" value="'+esc(m.department)+'" readonly></div>' +
+      '</div>' +
+      '<div class="field"><label>Assignment</label><select id="ua">'+assignHtml+'</select></div>' +
+      '<div class="section-title">Contact Information</div>' +
+      '<div class="field"><label>Phone Number</label><input id="up" type="tel" value="'+esc(m.phone)+'" placeholder="(310) 555-0100"></div>' +
+      '<div class="field"><label>Personal Email</label><input id="ue" type="email" value="'+esc(m.email)+'" placeholder="your.email@gmail.com"></div>' +
+      '<div class="warn">Work email domains (@lawa.org, @lacity.org, @lacity.com, @lapd.online) are not accepted. Please use a personal email address.</div>' +
+      '<div class="section-title">Mailing Address</div>' +
+      '<div class="field"><label>Street Address</label><input id="uaddr" type="text" value="'+esc(m.address)+'" placeholder="123 Main St"></div>' +
+      '<div class="field-row tri">' +
+        '<div class="field"><label>City</label><input id="ucity" type="text" value="'+esc(m.city)+'"></div>' +
+        '<div class="field"><label>State</label><input id="ust" type="text" value="'+esc(m.state||'CA')+'"></div>' +
+        '<div class="field"><label>ZIP</label><input id="uzip" type="text" value="'+esc(m.zip)+'"></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:10px;margin-top:20px">' +
+        '<button class="btn btn-outline" id="cancelBtn">Cancel</button>' +
+        '<button class="btn btn-gold" id="saveBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Saving...':'Save Changes')+'</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="footer">LAAPOA Member Info</div>';
+
+  document.getElementById('saveBtn').addEventListener('click', handleUpdate);
+  document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
+  document.getElementById('tabInfo').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
+  document.getElementById('ur').addEventListener('change', (ev) => handleRankChange(ev.target.value));
+}
+
+render();
+</script>
+</body>
+</html>
