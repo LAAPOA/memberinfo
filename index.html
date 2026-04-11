@@ -151,8 +151,13 @@ async function handleUpdate(e) {
       if (lower.endsWith(d)) { setState({error:'Work email addresses ('+d+') cannot be used. Please enter a personal email.'}); return; }
     }
   }
+  const serial = document.getElementById('userial')?.value?.trim() || '';
+  if (serial && !/^\d{5}$/.test(serial)) {
+    setState({error:'Serial number must be exactly 5 digits (e.g., 01234)'});
+    return;
+  }
   const updates = {
-    serialNumber: document.getElementById('userial')?.value?.trim() || '',
+    serialNumber: serial,
     rank: state.member.rank, mou: state.member.mou, department: state.member.department,
     assignment: document.getElementById('ua')?.value || '',
     phone: document.getElementById('up')?.value?.trim() || '',
@@ -518,7 +523,7 @@ function render() {
         '<button class="tab" id="tabDir">Directory</button>' +
       '</div>' +
       '<div class="section-title">Rank & Assignment</div>' +
-      '<div class="field"><label>Serial Number</label><input id="userial" type="text" value="'+esc(m.serialNumber)+'" placeholder="Badge / Serial #"></div>' +
+      '<div class="field"><label>Serial Number</label><input id="userial" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" value="'+esc(m.serialNumber)+'" placeholder="00000" style="font-family:\'JetBrains Mono\',monospace;letter-spacing:2px"></div>' +
       '<div class="field"><label>Rank</label><select id="ur">'+rankHtml+'</select></div>' +
       '<div class="field-row">' +
         '<div class="field"><label>MOU</label><input type="text" value="'+esc(m.mou)+'" readonly></div>' +
