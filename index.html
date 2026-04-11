@@ -421,8 +421,8 @@ function render() {
         const hasCity = !!p.cityCell;
         const hasMobile = canSeeMobile && !!p.mobilePhone;
         let phonesHtml = '';
-        if (hasCity) phonesHtml += '<div class="sr-phone">City Cell: <a href="tel:'+esc(p.cityCell)+'">'+esc(p.cityCell)+'</a></div>';
-        if (hasMobile) phonesHtml += '<div class="sr-phone">Mobile: <a href="tel:'+esc(p.mobilePhone)+'">'+esc(p.mobilePhone)+'</a></div>';
+        if (hasCity) phonesHtml += '<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">City Cell</span><a href="tel:'+esc(p.cityCell)+'">'+esc(p.cityCell)+'</a></div>';
+        if (hasMobile) phonesHtml += '<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">Mobile Phone</span><a href="tel:'+esc(p.mobilePhone)+'">'+esc(p.mobilePhone)+'</a></div>';
         if (!hasCity && !hasMobile && p.mobilePhone && !canSeeMobile) phonesHtml += '<div class="sr-phone" style="color:var(--text-muted);font-size:11px">Mobile hidden \u2014 share yours to see others</div>';
         if (!phonesHtml) phonesHtml = '<div class="sr-phone" style="color:var(--text-muted)">No phone listed</div>';
         let callHtml = '';
