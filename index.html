@@ -161,6 +161,9 @@ async function handleUpdate(e) {
     zip: document.getElementById('uzip')?.value?.trim() || '',
     directoryOptOut: state.member.directoryOptOut || 'false',
     directoryOptOutTime: state.member.directoryOptOutTime || '',
+    cityCell: document.getElementById('ucitycell')?.value?.trim() || '',
+    showMobilePhone: state.member.showMobilePhone || 'false',
+    showMobilePhoneTime: state.member.showMobilePhoneTime || '',
   };
   setState({loading:true, error:'', success:''});
   const res = await apiCall('update', {token:state.token, row:state.row, updates});
@@ -199,26 +202,37 @@ function getAssignOptions(mou) {
 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-const COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours
+const COOLDOWN_MS = 1 * 60 * 60 * 1000; // 1 hour
 
 function getDirectoryStatus(m) {
-  // Returns: { blocked: bool, reason: string, countdownMs: number }
+  // Returns: { blocked: bool, mobileBlocked: bool, reason: string, countdownMs: number, mobileCountdownMs: number }
   if (m.directoryOptOut === 'true') {
-    return { blocked: true, reason: 'You are currently hidden from the directory. To use the directory, make yourself visible on the Update tab.', countdownMs: 0 };
+    return { blocked: true, mobileBlocked: true, reason: 'You are currently hidden from the directory. To use the directory, make yourself visible on the Update tab.', countdownMs: 0, mobileCountdownMs: 0 };
   }
+  let dirCountdown = 0;
   if (m.directoryOptOutTime) {
     const optOutTime = new Date(m.directoryOptOutTime).getTime();
     if (!isNaN(optOutTime)) {
-      const elapsed = Date.now() - optOutTime;
-      const remaining = COOLDOWN_MS - elapsed;
-      if (remaining > 0) {
-        const hrs = Math.floor(remaining / (1000 * 60 * 60));
-        const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-        return { blocked: true, reason: 'Directory access is temporarily unavailable. You recently hid yourself from the directory. Access will be restored in ' + hrs + 'h ' + mins + 'm.', countdownMs: remaining };
-      }
+      const remaining = COOLDOWN_MS - (Date.now() - optOutTime);
+      if (remaining > 0) dirCountdown = remaining;
     }
   }
-  return { blocked: false, reason: '', countdownMs: 0 };
+  if (dirCountdown > 0) {
+    const hrs = Math.floor(dirCountdown / (1000 * 60 * 60));
+    const mins = Math.floor((dirCountdown % (1000 * 60 * 60)) / (1000 * 60));
+    return { blocked: true, mobileBlocked: true, reason: 'Directory access is temporarily unavailable. Access will be restored in ' + (hrs > 0 ? hrs + 'h ' : '') + mins + 'm.', countdownMs: dirCountdown, mobileCountdownMs: 0 };
+  }
+  // Check mobile phone cooldown
+  let mobileCountdown = 0;
+  if (m.showMobilePhoneTime) {
+    const mobileTime = new Date(m.showMobilePhoneTime).getTime();
+    if (!isNaN(mobileTime)) {
+      const remaining = COOLDOWN_MS - (Date.now() - mobileTime);
+      if (remaining > 0) mobileCountdown = remaining;
+    }
+  }
+  const mobileBlocked = (m.showMobilePhone !== 'true') || mobileCountdown > 0;
+  return { blocked: false, mobileBlocked: mobileBlocked, reason: '', countdownMs: 0, mobileCountdownMs: mobileCountdown };
 }
 
 let searchResults=[];
@@ -243,7 +257,6 @@ function generateVCard(person) {
   const parts=(person.name||'').split(' ');
   const last=parts.pop()||'';
   const first=parts.join(' ')||'';
-  const phone=(person.phone||'').replace(/[^+\d]/g,'');
   const lines=[
     'BEGIN:VCARD',
     'VERSION:3.0',
@@ -252,7 +265,8 @@ function generateVCard(person) {
     'ORG:LAAPOA'+(person.assignment?' - '+person.assignment:''),
     'TITLE:'+(person.rank||''),
   ];
-  if(phone)lines.push('TEL;TYPE=CELL:'+phone);
+  if(person.cityCell)lines.push('TEL;TYPE=WORK,CELL:'+person.cityCell.replace(/[^+\d]/g,''));
+  if(person.mobilePhone)lines.push('TEL;TYPE=CELL:'+person.mobilePhone.replace(/[^+\d]/g,''));
   lines.push('END:VCARD');
   return lines.join('\r\n');
 }
@@ -322,7 +336,8 @@ function render() {
         '<div class="info-row"><span class="info-label">CID</span><span class="info-val" style="font-family:\'JetBrains Mono\',monospace">'+esc(m.cid||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Status</span><span class="info-val">'+esc(m.memberStatus||'—')+'</span></div>' +
         '<div class="section-title">Contact</div>' +
-        '<div class="info-row"><span class="info-label">Phone</span><span class="info-val">'+(m.phone?'<a href="tel:'+esc(m.phone)+'">'+esc(m.phone)+'</a>':'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">Mobile Phone</span><span class="info-val">'+(m.phone?'<a href="tel:'+esc(m.phone)+'">'+esc(m.phone)+'</a>':'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">City Cell</span><span class="info-val">'+(m.cityCell?'<a href="tel:'+esc(m.cityCell)+'">'+esc(m.cityCell)+'</a>':'<span style="color:var(--text-muted)">Not provided</span>')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Email</span><span class="info-val">'+(m.email?'<a href="mailto:'+esc(m.email)+'">'+esc(m.email)+'</a>':'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Address</span><span class="info-val" style="white-space:pre-line">'+(fmtAddr?esc(fmtAddr).replace(/\\n/g,'\n'):'—')+'</span></div>' +
         '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
@@ -398,20 +413,31 @@ function render() {
     } else if (searchQuery.length >= 2 && searchResults.length === 0) {
       resultsHtml = '<div class="search-empty">No members found for "'+esc(searchQuery)+'"</div>';
     } else if (searchResults.length > 0) {
+      const ds2 = getDirectoryStatus(m);
+      const canSeeMobile = !ds2.mobileBlocked;
       searchResults.forEach(p => {
         const pi = (p.name||'').split(' ').map(w=>w[0]).filter(Boolean).slice(0,2).join('').toUpperCase();
         const safeId = (p.name||'').replace(/\W/g,'');
-        const phoneClean = (p.phone||'').replace(/[^+\d]/g,'');
+        const hasCity = !!p.cityCell;
+        const hasMobile = canSeeMobile && !!p.mobilePhone;
+        let phonesHtml = '';
+        if (hasCity) phonesHtml += '<div class="sr-phone">City Cell: <a href="tel:'+esc(p.cityCell)+'">'+esc(p.cityCell)+'</a></div>';
+        if (hasMobile) phonesHtml += '<div class="sr-phone">Mobile: <a href="tel:'+esc(p.mobilePhone)+'">'+esc(p.mobilePhone)+'</a></div>';
+        if (!hasCity && !hasMobile && p.mobilePhone && !canSeeMobile) phonesHtml += '<div class="sr-phone" style="color:var(--text-muted);font-size:11px">Mobile hidden — share yours to see others'</div>';
+        if (!phonesHtml) phonesHtml = '<div class="sr-phone" style="color:var(--text-muted)">No phone listed</div>';
+        let callHtml = '';
+        if (hasCity) callHtml += '<a href="tel:'+esc(p.cityCell)+'" class="sr-btn">Call City</a>';
+        if (hasMobile) callHtml += '<a href="tel:'+esc(p.mobilePhone)+'" class="sr-btn">Call Mobile</a>';
         resultsHtml +=
           '<div class="sr-card">' +
             '<div class="sr-avatar">'+pi+'</div>' +
             '<div class="sr-info">' +
               '<div class="sr-name">'+esc(p.name)+'</div>' +
-              '<div class="sr-detail">'+esc(p.rank||'')+(p.assignment?' · '+esc(p.assignment):'')+'</div>' +
-              (p.phone ? '<div class="sr-phone"><a href="tel:'+esc(p.phone)+'">'+esc(p.phone)+'</a></div>' : '<div class="sr-phone" style="color:var(--text-muted)">No phone listed</div>') +
+              '<div class="sr-detail">'+esc(p.rank||'')+(p.assignment?' \xb7 '+esc(p.assignment):'')+(p.serialNumber?' \xb7 #'+esc(p.serialNumber):'')+'</div>' +
+              phonesHtml +
             '</div>' +
             '<div class="sr-actions">' +
-              (p.phone?'<a href="tel:'+esc(p.phone)+'" class="sr-btn">Call</a>':'') +
+              callHtml +
               '<button class="sr-btn save-btn" id="save_'+safeId+'" data-idx="'+searchResults.indexOf(p)+'">Save Contact</button>' +
             '</div>' +
           '</div>';
@@ -496,7 +522,8 @@ function render() {
       '</div>' +
       '<div class="field"><label>Assignment</label><select id="ua">'+assignHtml+'</select></div>' +
       '<div class="section-title">Contact Information</div>' +
-      '<div class="field"><label>Phone Number</label><input id="up" type="tel" value="'+esc(m.phone)+'" placeholder="(310) 555-0100"></div>' +
+      '<div class="field"><label>Mobile Phone</label><input id="up" type="tel" value="'+esc(m.phone)+'" placeholder="(310) 555-0100"></div>' +
+      '<div class="field"><label>City Cell'+(m.cityCell?'':' <span style="color:var(--text-muted)">(not provided)</span>')+'</label><input id="ucitycell" type="tel" value="'+esc(m.cityCell)+'" placeholder="City-issued cell number"></div>' +
       '<div class="field"><label>Personal Email</label><input id="ue" type="email" value="'+esc(m.email)+'" placeholder="your.email@gmail.com"></div>' +
       '<div id="emailErr" style="display:none" class="err"></div>' +
       '<div class="warn">Work email domains (@lawa.org, @lacity.org, @lacity.com, @lapd.online) are not accepted. Please use a personal email address.</div>' +
@@ -507,16 +534,28 @@ function render() {
         '<div class="field"><label>State</label><input id="ust" type="text" value="'+esc(m.state||'CA')+'"></div>' +
         '<div class="field"><label>ZIP</label><input id="uzip" type="text" value="'+esc(m.zip)+'"></div>' +
       '</div>' +
-      '<div class="section-title">Privacy</div>' +
+      '<div class="section-title">Directory Visibility</div>' +
       '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer" id="optOutToggle">' +
         '<div style="width:44px;height:24px;border-radius:12px;background:'+(m.directoryOptOut==='true'?'var(--red)':'var(--green)')+';position:relative;transition:all .2s;flex-shrink:0">' +
           '<div style="width:20px;height:20px;border-radius:50%;background:white;position:absolute;top:2px;'+(m.directoryOptOut==='true'?'left:22px':'left:2px')+';transition:all .2s"></div>' +
         '</div>' +
         '<div>' +
           '<div style="font-size:14px;font-weight:500">'+(m.directoryOptOut==='true'?'Hidden from Directory':'Visible in Directory')+'</div>' +
-          '<div style="font-size:12px;color:var(--text-dim)">'+(m.directoryOptOut==='true'?'Other members cannot find you in search':'Other members can find your name and phone number')+'</div>' +
+          '<div style="font-size:12px;color:var(--text-dim)">'+(m.directoryOptOut==='true'?'Other members cannot find you':'Your city cell is visible to other members')+'</div>' +
         '</div>' +
       '</div>' +
+      (m.directoryOptOut!=='true'?
+        '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;'+((!m.cityCell&&m.phone)?'':'')+(m.directoryOptOut==='true'?'opacity:0.4;pointer-events:none':'')+'" id="mobileToggle">' +
+          '<div style="width:44px;height:24px;border-radius:12px;background:'+(m.showMobilePhone==='true'?'var(--green)':'var(--surface-raised)')+';border:1px solid var(--border);position:relative;transition:all .2s;flex-shrink:0">' +
+            '<div style="width:20px;height:20px;border-radius:50%;background:white;position:absolute;top:1px;'+(m.showMobilePhone==='true'?'left:21px':'left:1px')+';transition:all .2s"></div>' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:14px;font-weight:500">'+(m.showMobilePhone==='true'?'Mobile Phone Visible':'Mobile Phone Hidden')+'</div>' +
+            '<div style="font-size:12px;color:var(--text-dim)">'+(m.showMobilePhone==='true'?'Other members can see your mobile phone number':'Only your city cell is shown in directory')+'</div>' +
+          '</div>' +
+        '</div>'
+      :'') +
+      '<div style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:4px">Reducing your visibility triggers a 1-hour cooldown before you can search at that level again.</div>' +
       '<div style="display:flex;gap:10px;margin-top:20px">' +
         '<button class="btn btn-outline" id="cancelBtn">Cancel</button>' +
         '<button class="btn btn-gold" id="saveBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Saving...':'Save Changes')+'</button>' +
@@ -533,18 +572,29 @@ function render() {
     searchResults=[];searchQuery='';setState({tab:'directory',success:''});
   });
   document.getElementById('ur').addEventListener('change', (ev) => handleRankChange(ev.target.value));
-  document.getElementById('optOutToggle').addEventListener('click', ()=>{
+  document.getElementById('optOutToggle').addEventListener('click', function(){
     if (state.member.directoryOptOut === 'true') {
-      // Going visible — set the cooldown timestamp to NOW (cooldown starts)
       state.member.directoryOptOut = 'false';
       state.member.directoryOptOutTime = new Date().toISOString();
     } else {
-      // Going invisible — set timestamp
       state.member.directoryOptOut = 'true';
       state.member.directoryOptOutTime = new Date().toISOString();
+      state.member.showMobilePhone = 'false';
     }
     setState({});
   });
+  var mobileToggle = document.getElementById('mobileToggle');
+  if (mobileToggle) {
+    mobileToggle.addEventListener('click', function(){
+      if (state.member.showMobilePhone === 'true') {
+        state.member.showMobilePhone = 'false';
+        state.member.showMobilePhoneTime = new Date().toISOString();
+      } else {
+        state.member.showMobilePhone = 'true';
+      }
+      setState({});
+    });
+  }
 
   // Real-time email domain validation
   const ueEl = document.getElementById('ue');
