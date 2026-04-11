@@ -278,13 +278,12 @@ function saveContact(person) {
   const a=document.createElement('a');
   a.href=url;
   a.download=(person.name||'contact').replace(/\s+/g,'_')+'.vcf';
+  // iOS Safari needs the link in the DOM
+  a.style.display='none';
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  // Mark saved visually
-  const btn=document.getElementById('save_'+person.name.replace(/\W/g,''));
-  if(btn){btn.textContent='Saved!';btn.classList.add('saved');}
+  // Cleanup after delay
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
 }
 
 function render() {
@@ -438,7 +437,7 @@ function render() {
             '</div>' +
             '<div class="sr-actions">' +
               callHtml +
-              '<button class="sr-btn save-btn" id="save_'+safeId+'" data-idx="'+searchResults.indexOf(p)+'">Save Contact</button>' +
+              '<button class="sr-btn save-btn" id="save_'+safeId+'" data-idx="'+searchResults.indexOf(p)+'">Add to Contacts</button>' +
             '</div>' +
           '</div>';
       });
