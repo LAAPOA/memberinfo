@@ -160,6 +160,7 @@ async function handleUpdate(e) {
     state: document.getElementById('ust')?.value?.trim() || '',
     zip: document.getElementById('uzip')?.value?.trim() || '',
     directoryOptOut: state.member.directoryOptOut || 'false',
+    directoryOptOutTime: state.member.directoryOptOutTime || '',
   };
   setState({loading:true, error:'', success:''});
   const res = await apiCall('update', {token:state.token, row:state.row, updates});
@@ -197,6 +198,28 @@ function getAssignOptions(mou) {
 }
 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+const COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+function getDirectoryStatus(m) {
+  // Returns: { blocked: bool, reason: string, countdownMs: number }
+  if (m.directoryOptOut === 'true') {
+    return { blocked: true, reason: 'You are currently hidden from the directory. To use the directory, make yourself visible on the Update tab.', countdownMs: 0 };
+  }
+  if (m.directoryOptOutTime) {
+    const optOutTime = new Date(m.directoryOptOutTime).getTime();
+    if (!isNaN(optOutTime)) {
+      const elapsed = Date.now() - optOutTime;
+      const remaining = COOLDOWN_MS - elapsed;
+      if (remaining > 0) {
+        const hrs = Math.floor(remaining / (1000 * 60 * 60));
+        const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        return { blocked: true, reason: 'Directory access is temporarily unavailable. You recently hid yourself from the directory. Access will be restored in ' + hrs + 'h ' + mins + 'm.', countdownMs: remaining };
+      }
+    }
+  }
+  return { blocked: false, reason: '', countdownMs: 0 };
+}
 
 let searchResults=[];
 let searchQuery='';
@@ -306,8 +329,64 @@ function render() {
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
     document.getElementById('tabEdit').addEventListener('click', ()=>setState({tab:'edit',success:''}));
-    document.getElementById('tabDir').addEventListener('click', ()=>{searchResults=[];searchQuery='';setState({tab:'directory',success:''});});
+    document.getElementById('tabDir').addEventListener('click', ()=>{
+      const ds=getDirectoryStatus(state.member);
+      if(ds.blocked){setState({tab:'directory_blocked',success:'',_dirStatus:ds});return;}
+      searchResults=[];searchQuery='';setState({tab:'directory',success:''});
+    });
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
+    return;
+  }
+
+  // Directory blocked view
+  if (state.tab === 'directory_blocked') {
+    const ds = state._dirStatus || getDirectoryStatus(m);
+    app.innerHTML =
+      '<div class="card">' +
+        '<div class="member-header">' +
+          '<div class="avatar">'+initials+'</div>' +
+          '<div><div class="member-name">'+esc(m.name)+'</div>' +
+          '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+'</div></div>' +
+        '</div>' +
+        '<div class="tabs">' +
+          '<button class="tab" id="tabInfo">My Info</button>' +
+          '<button class="tab" id="tabEdit">Update</button>' +
+          '<button class="tab on" id="tabDir">Directory</button>' +
+        '</div>' +
+        '<div style="text-align:center;padding:40px 20px">' +
+          '<div style="font-size:48px;margin-bottom:16px">🔒</div>' +
+          '<div style="font-size:16px;font-weight:600;margin-bottom:12px">Directory Access Restricted</div>' +
+          '<div style="font-size:13px;color:var(--text-dim);line-height:1.6;max-width:320px;margin:0 auto">'+esc(ds.reason)+'</div>' +
+          (ds.countdownMs>0?'<div id="countdown" style="margin-top:16px;font-family:\'JetBrains Mono\',monospace;font-size:24px;color:var(--gold)"></div>':'') +
+        '</div>' +
+        '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
+      '</div>' +
+      '<div class="footer">LAAPOA Member Info</div>';
+
+    document.getElementById('tabInfo').addEventListener('click', ()=>setState({tab:'info'}));
+    document.getElementById('tabEdit').addEventListener('click', ()=>setState({tab:'edit',success:''}));
+    document.getElementById('tabDir').addEventListener('click', ()=>{
+      const ds2=getDirectoryStatus(state.member);
+      if(ds2.blocked){setState({tab:'directory_blocked',_dirStatus:ds2});return;}
+      searchResults=[];searchQuery='';setState({tab:'directory',success:''});
+    });
+    document.getElementById('logoutBtn').addEventListener('click', clearSession);
+
+    // Live countdown timer
+    if (ds.countdownMs > 0) {
+      const cdEl = document.getElementById('countdown');
+      let remaining = ds.countdownMs;
+      function tick() {
+        if (remaining <= 0) { setState({tab:'directory',success:''}); return; }
+        const h = Math.floor(remaining/(1000*60*60));
+        const mn = Math.floor((remaining%(1000*60*60))/(1000*60));
+        const s = Math.floor((remaining%(1000*60))/1000);
+        if(cdEl) cdEl.textContent = String(h).padStart(2,'0')+':'+String(mn).padStart(2,'0')+':'+String(s).padStart(2,'0');
+        remaining -= 1000;
+        setTimeout(tick, 1000);
+      }
+      tick();
+    }
     return;
   }
 
@@ -448,10 +527,22 @@ function render() {
   document.getElementById('saveBtn').addEventListener('click', handleUpdate);
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
   document.getElementById('tabInfo').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
-  document.getElementById('tabDir').addEventListener('click', ()=>{searchResults=[];searchQuery='';setState({tab:'directory',success:''});});
+  document.getElementById('tabDir').addEventListener('click', ()=>{
+    const ds=getDirectoryStatus(state.member);
+    if(ds.blocked){setState({tab:'directory_blocked',_dirStatus:ds});return;}
+    searchResults=[];searchQuery='';setState({tab:'directory',success:''});
+  });
   document.getElementById('ur').addEventListener('change', (ev) => handleRankChange(ev.target.value));
   document.getElementById('optOutToggle').addEventListener('click', ()=>{
-    state.member.directoryOptOut = state.member.directoryOptOut==='true'?'false':'true';
+    if (state.member.directoryOptOut === 'true') {
+      // Going visible — set the cooldown timestamp to NOW (cooldown starts)
+      state.member.directoryOptOut = 'false';
+      state.member.directoryOptOutTime = new Date().toISOString();
+    } else {
+      // Going invisible — set timestamp
+      state.member.directoryOptOut = 'true';
+      state.member.directoryOptOutTime = new Date().toISOString();
+    }
     setState({});
   });
 
