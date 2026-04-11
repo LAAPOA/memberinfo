@@ -9,22 +9,27 @@
 <style>
 :root{--navy:#0B1A33;--gold:#C6973F;--gold-light:#D4AD5E;--gold-dim:rgba(198,151,63,.15);--red:#C0392B;--red-dim:rgba(192,57,43,.12);--green:#27AE60;--green-dim:rgba(39,174,96,.12);--text:#E8E8EC;--text-dim:#8A8FA0;--text-muted:#5A6070;--surface:#0F1F38;--surface-raised:#152A4A;--border:rgba(198,151,63,.12);--border-bright:rgba(198,151,63,.3);--radius:8px;--radius-lg:12px;--shadow:0 4px 24px rgba(0,0,0,.3)}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.container{width:440px;max-width:100%}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 28px;box-shadow:var(--shadow);margin-bottom:16px}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);min-height:100vh;min-height:100dvh;display:flex;align-items:flex-start;justify-content:center;padding:0}
+.container{width:100%;max-width:520px;min-height:100vh;min-height:100dvh}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:0;padding:32px 24px;box-shadow:none;margin-bottom:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+@media(min-width:540px){
+  body{align-items:center;padding:20px}
+  .container{min-height:auto}
+  .card{border-radius:var(--radius-lg);box-shadow:var(--shadow);min-height:auto;margin-bottom:16px}
+}
 .brand{text-align:center;margin-bottom:24px}
 .brand .badge{width:56px;height:56px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:var(--navy);margin-bottom:12px}
 .brand h1{font-size:20px;font-weight:700}
 .brand p{font-size:13px;color:var(--text-dim);margin-top:4px}
 .field{margin-bottom:16px}
 .field label{display:block;font-size:12px;font-weight:500;color:var(--text-dim);margin-bottom:4px}
-.field input,.field select{width:100%;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
+.field input,.field select{width:100%;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;color:var(--text);font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none}
 .field input:focus,.field select:focus{border-color:var(--gold)}
 .field input[readonly]{opacity:.6;cursor:default}
 .field select{cursor:pointer}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field-row.tri{grid-template-columns:2fr 1fr 1fr}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:14px;border-radius:var(--radius);font-size:16px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s;min-height:48px}
 .btn-gold{background:var(--gold);color:var(--navy)}
 .btn-gold:hover{background:var(--gold-light)}
 .btn-gold:disabled{opacity:.5;cursor:not-allowed}
@@ -32,7 +37,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .btn-outline:hover{border-color:var(--border-bright)}
 .err{background:var(--red-dim);color:var(--red);padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:16px}
 .ok{background:var(--green-dim);color:var(--green);padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:16px}
-.warn{background:rgba(230,126,34,.12);color:#E67E22;padding:8px 12px;border-radius:var(--radius);font-size:12px;margin-bottom:16px;line-height:1.5}
+.warn{background:rgba(230,126,34,.12);color:#E67E22;padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:16px;line-height:1.5}
 .section-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin:20px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 .section-title:first-child{margin-top:0}
 .member-header{display:flex;gap:14px;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
@@ -40,14 +45,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .member-name{font-size:18px;font-weight:700}
 .member-detail{font-size:13px;color:var(--text-dim);margin-top:2px}
 .footer{text-align:center;font-size:11px;color:var(--text-muted);padding:8px}
-.info-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;border-bottom:1px solid var(--border)}
+.info-row{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:14px;border-bottom:1px solid var(--border)}
 .info-row:last-child{border-bottom:none}
-.info-label{color:var(--text-dim);min-width:90px;font-size:12px}
+.info-label{color:var(--text-dim);min-width:90px;font-size:13px}
 .info-val{color:var(--text)}
 .info-val a{color:var(--gold);text-decoration:none}
 .info-val a:hover{text-decoration:underline}
 .tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-dim);background:var(--navy);transition:all .15s;border:none;font-family:inherit}
+.tab{flex:1;padding:12px;text-align:center;font-size:14px;font-weight:500;cursor:pointer;color:var(--text-dim);background:var(--navy);transition:all .15s;border:none;font-family:inherit;min-height:44px}
 .tab:hover{color:var(--text)}
 .tab.on{background:var(--gold-dim);color:var(--gold)}
 @media(max-width:480px){.field-row{grid-template-columns:1fr}.field-row.tri{grid-template-columns:1fr}}
@@ -95,11 +100,14 @@ function clearSession() {
   render();
 }
 
+let _clientIp='unknown';
+fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(d=>{_clientIp=d.ip||'unknown';}).catch(()=>{});
+
 async function apiCall(action, payload) {
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action, ...payload })
+    body: JSON.stringify({ action, _ip:_clientIp, ...payload })
   });
   return await res.json();
 }
@@ -272,6 +280,7 @@ function render() {
       '<div class="section-title">Contact Information</div>' +
       '<div class="field"><label>Phone Number</label><input id="up" type="tel" value="'+esc(m.phone)+'" placeholder="(310) 555-0100"></div>' +
       '<div class="field"><label>Personal Email</label><input id="ue" type="email" value="'+esc(m.email)+'" placeholder="your.email@gmail.com"></div>' +
+      '<div id="emailErr" style="display:none" class="err"></div>' +
       '<div class="warn">Work email domains (@lawa.org, @lacity.org, @lacity.com, @lapd.online) are not accepted. Please use a personal email address.</div>' +
       '<div class="section-title">Mailing Address</div>' +
       '<div class="field"><label>Street Address</label><input id="uaddr" type="text" value="'+esc(m.address)+'" placeholder="123 Main St"></div>' +
@@ -291,6 +300,29 @@ function render() {
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
   document.getElementById('tabInfo').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
   document.getElementById('ur').addEventListener('change', (ev) => handleRankChange(ev.target.value));
+
+  // Real-time email domain validation
+  const ueEl = document.getElementById('ue');
+  const emailErrEl = document.getElementById('emailErr');
+  const saveBtnEl = document.getElementById('saveBtn');
+  function checkEmail() {
+    const v = (ueEl.value||'').toLowerCase().trim();
+    let blocked = '';
+    for (const d of BLOCKED) { if (v.endsWith(d)) { blocked = d; break; } }
+    if (blocked) {
+      emailErrEl.textContent = 'This is a work email domain (' + blocked + '). You must use a personal email address.';
+      emailErrEl.style.display = 'block';
+      ueEl.style.borderColor = 'var(--red)';
+      saveBtnEl.disabled = true;
+    } else {
+      emailErrEl.style.display = 'none';
+      ueEl.style.borderColor = '';
+      saveBtnEl.disabled = state.loading;
+    }
+  }
+  ueEl.addEventListener('input', checkEmail);
+  ueEl.addEventListener('blur', checkEmail);
+  checkEmail();
 }
 
 render();
