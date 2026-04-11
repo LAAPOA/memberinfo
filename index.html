@@ -90,7 +90,8 @@ const RANK_OPTIONS = [
   {group:'Park Rangers — MOU 65',items:[{label:'Park Ranger (MOU 65)',rank:'Park Ranger',mou:'MOU 65',dept:'Park Rangers'},{label:'Park Ranger Supervisor (MOU 65)',rank:'Park Ranger Supervisor',mou:'MOU 65',dept:'Park Rangers'},{label:'Commanding Park Ranger (MOU 65)',rank:'Commanding Park Ranger',mou:'MOU 65',dept:'Park Rangers'}]}
 ];
 
-const ASSIGN_30_39 = [{group:'PSS',items:['PSS Watch 1','PSS Watch 2','PSS Watch 3']},{group:'Specialized Units',items:['APIC','Court Liaison','CTF','Dignitary Protection','ESU','K9s','Motors','Range','Special Projects','Training','VAAU']},{group:'Other',items:['My unit not listed']}];
+const ASSIGN_30 = [{group:'PSS',items:['PSS Watch 1','PSS Watch 2','PSS Watch 3']},{group:'Specialized Units',items:['APIC','Court Liaison','CTF','Dignitary Protection','ESU','K9s','Motors','Range','Special Projects','Training','VAAU']},{group:'Other',items:['My unit not listed']}];
+const ASSIGN_39 = [{group:'PSS',items:['PSS Watch 1','PSS Watch 2','PSS Watch 3']},{group:'Specialized Units',items:['APIC','Court Liaison','CTF','Dignitary Protection','ESU','Internal Affairs','K9s','Motors','Range','Special Projects','Training','VAAU']},{group:'Other',items:['My unit not listed']}];
 const ASSIGN_28 = [{group:'Municipal Police',items:['Daily Posts',"Mayor's Post",'MLO-CRO','MLO-Sgt Arms']}];
 const ASSIGN_65 = [{group:'Ranger Duties',items:['Griffith / Metro RGN','Valley RGN','Observatory','H.R.S.T.','Harbor RGN']}];
 
@@ -194,7 +195,8 @@ function rankToLabel(rank, mou) {
 }
 
 function getAssignOptions(mou) {
-  if (mou === 'MOU 30' || mou === 'MOU 39') return ASSIGN_30_39;
+  if (mou === 'MOU 30') return ASSIGN_30;
+  if (mou === 'MOU 39') return ASSIGN_39;
   if (mou === 'MOU 28') return ASSIGN_28;
   if (mou === 'MOU 65') return ASSIGN_65;
   return [];
