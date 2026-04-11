@@ -56,6 +56,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .tab:hover{color:var(--text)}
 .tab.on{background:var(--gold-dim);color:var(--gold)}
 @media(max-width:480px){.field-row{grid-template-columns:1fr}.field-row.tri{grid-template-columns:1fr}}
+.search-input{display:flex;gap:8px;margin-bottom:16px}
+.search-input input{flex:1;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;color:var(--text);font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none}
+.search-input input:focus{border-color:var(--gold)}
+.search-input input::placeholder{color:var(--text-muted)}
+.sr-card{background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:14px}
+.sr-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--navy);flex-shrink:0}
+.sr-info{flex:1;min-width:0}
+.sr-name{font-weight:600;font-size:14px}
+.sr-detail{font-size:12px;color:var(--text-dim);margin-top:2px}
+.sr-phone{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold-light);margin-top:4px}
+.sr-phone a{color:var(--gold-light);text-decoration:none}
+.sr-phone a:hover{text-decoration:underline}
+.sr-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.sr-btn{padding:6px 12px;border-radius:var(--radius);font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface-raised);color:var(--text);font-family:inherit;white-space:nowrap;min-height:32px;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .15s}
+.sr-btn:hover{border-color:var(--border-bright);background:var(--gold-dim);color:var(--gold)}
+.sr-btn.saved{background:var(--green-dim);border-color:transparent;color:var(--green)}
+.search-empty{text-align:center;padding:30px 20px;color:var(--text-muted);font-size:14px}
 </style>
 </head>
 <body>
@@ -180,6 +197,61 @@ function getAssignOptions(mou) {
 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+let searchTimer=null;
+let searchResults=[];
+let searchQuery='';
+let searchLoading=false;
+
+async function doSearch(q) {
+  searchQuery=q;
+  if(q.trim().length<2){searchResults=[];searchLoading=false;render();return;}
+  searchLoading=true;render();
+  const res=await apiCall('search',{token:state.token,query:q.trim()});
+  searchLoading=false;
+  if(res.ok)searchResults=res.results||[];
+  else searchResults=[];
+  render();
+}
+
+function handleSearchInput(val) {
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(()=>doSearch(val),300);
+}
+
+function generateVCard(person) {
+  const parts=(person.name||'').split(' ');
+  const last=parts.pop()||'';
+  const first=parts.join(' ')||'';
+  const phone=(person.phone||'').replace(/[^+\d]/g,'');
+  const lines=[
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    'N:'+last+';'+first+';;;',
+    'FN:'+person.name,
+    'ORG:LAAPOA'+(person.assignment?' - '+person.assignment:''),
+    'TITLE:'+(person.rank||''),
+  ];
+  if(phone)lines.push('TEL;TYPE=CELL:'+phone);
+  lines.push('END:VCARD');
+  return lines.join('\r\n');
+}
+
+function saveContact(person) {
+  const vcf=generateVCard(person);
+  const blob=new Blob([vcf],{type:'text/vcard;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=(person.name||'contact').replace(/\s+/g,'_')+'.vcf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  // Mark saved visually
+  const btn=document.getElementById('save_'+person.name.replace(/\W/g,''));
+  if(btn){btn.textContent='Saved!';btn.classList.add('saved');}
+}
+
 function render() {
   const app = document.getElementById('app');
 
@@ -218,7 +290,8 @@ function render() {
         (state.success ? '<div class="ok">'+esc(state.success)+'</div>' : '') +
         '<div class="tabs">' +
           '<button class="tab on" id="tabInfo">My Info</button>' +
-          '<button class="tab" id="tabEdit">Update Info</button>' +
+          '<button class="tab" id="tabEdit">Update</button>' +
+          '<button class="tab" id="tabDir">Directory</button>' +
         '</div>' +
         '<div class="section-title">Employment</div>' +
         '<div class="info-row"><span class="info-label">Rank</span><span class="info-val">'+esc(m.rank||'—')+'</span></div>' +
@@ -235,7 +308,73 @@ function render() {
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
     document.getElementById('tabEdit').addEventListener('click', ()=>setState({tab:'edit',success:''}));
+    document.getElementById('tabDir').addEventListener('click', ()=>{searchResults=[];searchQuery='';setState({tab:'directory',success:''});});
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
+    return;
+  }
+
+  // Directory view
+  if (state.tab === 'directory') {
+    let resultsHtml = '';
+    if (searchLoading) {
+      resultsHtml = '<div class="search-empty">Searching...</div>';
+    } else if (searchQuery.length >= 2 && searchResults.length === 0) {
+      resultsHtml = '<div class="search-empty">No members found for "'+esc(searchQuery)+'"</div>';
+    } else if (searchResults.length > 0) {
+      searchResults.forEach(p => {
+        const pi = (p.name||'').split(' ').map(w=>w[0]).filter(Boolean).slice(0,2).join('').toUpperCase();
+        const safeId = (p.name||'').replace(/\W/g,'');
+        const phoneClean = (p.phone||'').replace(/[^+\d]/g,'');
+        resultsHtml +=
+          '<div class="sr-card">' +
+            '<div class="sr-avatar">'+pi+'</div>' +
+            '<div class="sr-info">' +
+              '<div class="sr-name">'+esc(p.name)+'</div>' +
+              '<div class="sr-detail">'+esc(p.rank||'')+(p.assignment?' · '+esc(p.assignment):'')+'</div>' +
+              (p.phone ? '<div class="sr-phone"><a href="tel:'+esc(p.phone)+'">'+esc(p.phone)+'</a></div>' : '<div class="sr-phone" style="color:var(--text-muted)">No phone listed</div>') +
+            '</div>' +
+            '<div class="sr-actions">' +
+              (p.phone?'<a href="tel:'+esc(p.phone)+'" class="sr-btn">Call</a>':'') +
+              '<button class="sr-btn save-btn" id="save_'+safeId+'" data-idx="'+searchResults.indexOf(p)+'">Save Contact</button>' +
+            '</div>' +
+          '</div>';
+      });
+    } else {
+      resultsHtml = '<div class="search-empty">Search for members by name or assignment</div>';
+    }
+
+    app.innerHTML =
+      '<div class="card">' +
+        '<div class="member-header">' +
+          '<div class="avatar">'+initials+'</div>' +
+          '<div><div class="member-name">'+esc(m.name)+'</div>' +
+          '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+'</div></div>' +
+        '</div>' +
+        '<div class="tabs">' +
+          '<button class="tab" id="tabInfo">My Info</button>' +
+          '<button class="tab" id="tabEdit">Update</button>' +
+          '<button class="tab on" id="tabDir">Directory</button>' +
+        '</div>' +
+        '<div class="search-input"><input id="searchQ" type="text" placeholder="Search by name or assignment..." value="'+esc(searchQuery)+'"></div>' +
+        resultsHtml +
+        '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
+      '</div>' +
+      '<div class="footer">LAAPOA Member Info</div>';
+
+    document.getElementById('tabInfo').addEventListener('click', ()=>setState({tab:'info'}));
+    document.getElementById('tabEdit').addEventListener('click', ()=>setState({tab:'edit',success:''}));
+    document.getElementById('logoutBtn').addEventListener('click', clearSession);
+    const sq = document.getElementById('searchQ');
+    sq.addEventListener('input', e=>handleSearchInput(e.target.value));
+    sq.focus();
+
+    // Wire save contact buttons
+    document.querySelectorAll('.save-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const idx=parseInt(btn.getAttribute('data-idx'));
+        if(searchResults[idx])saveContact(searchResults[idx]);
+      });
+    });
     return;
   }
 
@@ -268,7 +407,8 @@ function render() {
       (state.success ? '<div class="ok">'+esc(state.success)+'</div>' : '') +
       '<div class="tabs">' +
         '<button class="tab" id="tabInfo">My Info</button>' +
-        '<button class="tab on" id="tabEdit">Update Info</button>' +
+        '<button class="tab on" id="tabEdit">Update</button>' +
+        '<button class="tab" id="tabDir">Directory</button>' +
       '</div>' +
       '<div class="section-title">Rank & Assignment</div>' +
       '<div class="field"><label>Rank</label><select id="ur">'+rankHtml+'</select></div>' +
@@ -299,6 +439,7 @@ function render() {
   document.getElementById('saveBtn').addEventListener('click', handleUpdate);
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
   document.getElementById('tabInfo').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
+  document.getElementById('tabDir').addEventListener('click', ()=>{searchResults=[];searchQuery='';setState({tab:'directory',success:''});});
   document.getElementById('ur').addEventListener('change', (ev) => handleRankChange(ev.target.value));
 
   // Real-time email domain validation
