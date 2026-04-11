@@ -423,7 +423,7 @@ function render() {
         let phonesHtml = '';
         if (hasCity) phonesHtml += '<div class="sr-phone">City Cell: <a href="tel:'+esc(p.cityCell)+'">'+esc(p.cityCell)+'</a></div>';
         if (hasMobile) phonesHtml += '<div class="sr-phone">Mobile: <a href="tel:'+esc(p.mobilePhone)+'">'+esc(p.mobilePhone)+'</a></div>';
-        if (!hasCity && !hasMobile && p.mobilePhone && !canSeeMobile) phonesHtml += '<div class="sr-phone" style="color:var(--text-muted);font-size:11px">Mobile hidden — share yours to see others'</div>';
+        if (!hasCity && !hasMobile && p.mobilePhone && !canSeeMobile) phonesHtml += '<div class="sr-phone" style="color:var(--text-muted);font-size:11px">Mobile hidden \u2014 share yours to see others</div>';
         if (!phonesHtml) phonesHtml = '<div class="sr-phone" style="color:var(--text-muted)">No phone listed</div>';
         let callHtml = '';
         if (hasCity) callHtml += '<a href="tel:'+esc(p.cityCell)+'" class="sr-btn">Call City</a>';
