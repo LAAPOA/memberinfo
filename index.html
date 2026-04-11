@@ -152,6 +152,7 @@ async function handleUpdate(e) {
     }
   }
   const updates = {
+    serialNumber: document.getElementById('userial')?.value?.trim() || '',
     rank: state.member.rank, mou: state.member.mou, department: state.member.department,
     assignment: document.getElementById('ua')?.value || '',
     phone: document.getElementById('up')?.value?.trim() || '',
@@ -330,6 +331,7 @@ function render() {
           '<button class="tab" id="tabDir">Directory</button>' +
         '</div>' +
         '<div class="section-title">Employment</div>' +
+        '<div class="info-row"><span class="info-label">Serial #</span><span class="info-val" style="font-family:\'JetBrains Mono\',monospace">'+esc(m.serialNumber||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Rank</span><span class="info-val">'+esc(m.rank||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">MOU</span><span class="info-val">'+esc(m.mou||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Department</span><span class="info-val">'+esc(m.department||'—')+'</span></div>' +
@@ -516,6 +518,7 @@ function render() {
         '<button class="tab" id="tabDir">Directory</button>' +
       '</div>' +
       '<div class="section-title">Rank & Assignment</div>' +
+      '<div class="field"><label>Serial Number</label><input id="userial" type="text" value="'+esc(m.serialNumber)+'" placeholder="Badge / Serial #"></div>' +
       '<div class="field"><label>Rank</label><select id="ur">'+rankHtml+'</select></div>' +
       '<div class="field-row">' +
         '<div class="field"><label>MOU</label><input type="text" value="'+esc(m.mou)+'" readonly></div>' +
