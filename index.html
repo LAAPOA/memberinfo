@@ -280,18 +280,10 @@ function generateVCard(person) {
 }
 
 function saveContact(person) {
-  const vcf=generateVCard(person);
-  const blob=new Blob([vcf],{type:'text/vcard;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=(person.name||'contact').replace(/\s+/g,'_')+'.vcf';
-  // iOS Safari needs the link in the DOM
-  a.style.display='none';
-  document.body.appendChild(a);
-  a.click();
-  // Cleanup after delay
-  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
+  const vcf = generateVCard(person);
+  // Use data URI - triggers native contact import on iOS and Android
+  const uri = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(vcf);
+  window.open(uri, '_self');
 }
 
 function render() {
