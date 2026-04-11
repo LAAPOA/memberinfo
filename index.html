@@ -159,6 +159,7 @@ async function handleUpdate(e) {
     city: document.getElementById('ucity')?.value?.trim() || '',
     state: document.getElementById('ust')?.value?.trim() || '',
     zip: document.getElementById('uzip')?.value?.trim() || '',
+    directoryOptOut: state.member.directoryOptOut || 'false',
   };
   setState({loading:true, error:'', success:''});
   const res = await apiCall('update', {token:state.token, row:state.row, updates});
@@ -427,6 +428,16 @@ function render() {
         '<div class="field"><label>State</label><input id="ust" type="text" value="'+esc(m.state||'CA')+'"></div>' +
         '<div class="field"><label>ZIP</label><input id="uzip" type="text" value="'+esc(m.zip)+'"></div>' +
       '</div>' +
+      '<div class="section-title">Privacy</div>' +
+      '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer" id="optOutToggle">' +
+        '<div style="width:44px;height:24px;border-radius:12px;background:'+(m.directoryOptOut==='true'?'var(--red)':'var(--green)')+';position:relative;transition:all .2s;flex-shrink:0">' +
+          '<div style="width:20px;height:20px;border-radius:50%;background:white;position:absolute;top:2px;'+(m.directoryOptOut==='true'?'left:22px':'left:2px')+';transition:all .2s"></div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-size:14px;font-weight:500">'+(m.directoryOptOut==='true'?'Hidden from Directory':'Visible in Directory')+'</div>' +
+          '<div style="font-size:12px;color:var(--text-dim)">'+(m.directoryOptOut==='true'?'Other members cannot find you in search':'Other members can find your name and phone number')+'</div>' +
+        '</div>' +
+      '</div>' +
       '<div style="display:flex;gap:10px;margin-top:20px">' +
         '<button class="btn btn-outline" id="cancelBtn">Cancel</button>' +
         '<button class="btn btn-gold" id="saveBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Saving...':'Save Changes')+'</button>' +
@@ -439,6 +450,10 @@ function render() {
   document.getElementById('tabInfo').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
   document.getElementById('tabDir').addEventListener('click', ()=>{searchResults=[];searchQuery='';setState({tab:'directory',success:''});});
   document.getElementById('ur').addEventListener('change', (ev) => handleRankChange(ev.target.value));
+  document.getElementById('optOutToggle').addEventListener('click', ()=>{
+    state.member.directoryOptOut = state.member.directoryOptOut==='true'?'false':'true';
+    setState({});
+  });
 
   // Real-time email domain validation
   const ueEl = document.getElementById('ue');
