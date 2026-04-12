@@ -121,6 +121,27 @@ function clearSession() {
 let _clientIp='unknown';
 fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(d=>{_clientIp=d.ip||'unknown';}).catch(()=>{});
 
+// Check token expiry and auto-logout
+function checkTokenExpiry() {
+  if (!state.token) return;
+  try {
+    const raw = atob(state.token);
+    const parts = raw.split('|');
+    const elapsed = (Date.now() - parseInt(parts[1])) / (1000 * 60 * 60);
+    if (elapsed > 8) {
+      clearSession();
+      return;
+    }
+    // Check again in 1 minute
+    setTimeout(checkTokenExpiry, 60000);
+  } catch(e) {
+    clearSession();
+  }
+}
+
+// Start expiry checker on load
+if (state.token) checkTokenExpiry();
+
 async function apiCall(action, payload) {
   const res = await fetch(API_URL, {
     method: 'POST',
@@ -140,6 +161,7 @@ async function handleLogin(e) {
   const res = await apiCall('login', {lastName, cid, dob});
   if (res.error) { setState({loading:false, error:res.error}); return; }
   setState({view:'info', member:res.member, token:res.token, row:res.row, loading:false, error:'', tab:'info'});
+  checkTokenExpiry();
 }
 
 async function handleUpdate(e) {
@@ -436,7 +458,7 @@ function render() {
         let phonesHtml = '';
         if (hasCity) phonesHtml += '<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">City Cell</span><a href="tel:'+esc(p.cityCell)+'">'+esc(fmtPhone(p.cityCell))+'</a></div>';
         if (hasMobile) phonesHtml += '<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">Mobile Phone</span><a href="tel:'+esc(p.mobilePhone)+'">'+esc(fmtPhone(p.mobilePhone))+'</a></div>';
-        if (!hasCity && !hasMobile && p.mobilePhone && !canSeeMobile) phonesHtml += '<div class="sr-phone" style="color:var(--text-muted);font-size:11px">Mobile hidden \u2014 share yours to see others</div>';
+        if (!hasCity && !hasMobile && p.mobilePhone && !canSeeMobile) phonesHtml += '<div class="sr-phone" style="color:var(--text-muted);font-size:11px">Mobile hidden \u2014 share yours to see theirs</div>';
         if (!phonesHtml) phonesHtml = '<div class="sr-phone" style="color:var(--text-muted)">No phone listed</div>';
         let callHtml = '';
         if (hasCity) callHtml += '<a href="tel:'+esc(p.cityCell)+'" class="sr-btn">Call City</a>';
