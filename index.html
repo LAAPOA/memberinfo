@@ -73,6 +73,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .sr-btn:hover{border-color:var(--border-bright);background:var(--gold-dim);color:var(--gold)}
 .sr-btn.saved{background:var(--green-dim);border-color:transparent;color:var(--green)}
 .search-empty{text-align:center;padding:30px 20px;color:var(--text-muted);font-size:14px}
+.sr-card{cursor:pointer}
+.sr-card:active{background:var(--surface-raised)}
+.contact-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.contact-full{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:400px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.cf-header{padding:28px 24px 20px;text-align:center;border-bottom:1px solid var(--border)}
+.cf-avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:var(--navy);margin:0 auto 14px}
+.cf-name{font-size:22px;font-weight:700}
+.cf-detail{font-size:14px;color:var(--text-dim);margin-top:4px}
+.cf-serial{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-muted);margin-top:4px}
+.cf-body{padding:20px 24px}
+.cf-section{margin-bottom:18px}
+.cf-section-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:12px}
+.cf-phone{padding:12px 0;border-bottom:1px solid var(--border)}
+.cf-phone:last-child{border-bottom:none}
+.cf-phone-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:4px}
+.cf-phone-num{font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--gold-light)}
+.cf-phone-num a{color:var(--gold-light);text-decoration:none}
+.cf-actions{padding:16px 24px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.cf-btn{padding:14px;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;border:none;font-family:inherit;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
+.cf-btn-call{background:var(--green);color:white}
+.cf-btn-add{background:var(--gold);color:var(--navy)}
+.cf-btn-close{background:none;border:1px solid var(--border);color:var(--text)}
 </style>
 </head>
 <body>
@@ -276,6 +299,7 @@ function getDirectoryStatus(m) {
 let searchResults=[];
 let searchQuery='';
 let searchLoading=false;
+let expandedContact=null;
 
 async function doSearch() {
   const q=searchQuery.trim();
@@ -488,7 +512,7 @@ function render() {
         if (hasCity) callHtml += '<a href="tel:'+esc(p.cityCell)+'" class="sr-btn">Call City</a>';
         if (hasMobile) callHtml += '<a href="tel:'+esc(p.mobilePhone)+'" class="sr-btn">Call Mobile</a>';
         resultsHtml +=
-          '<div class="sr-card">' +
+          '<div class="sr-card" data-cidx="'+searchResults.indexOf(p)+'">' +
             '<div class="sr-avatar">'+pi+'</div>' +
             '<div class="sr-info">' +
               '<div class="sr-name">'+esc(p.name)+'</div>' +
@@ -533,10 +557,27 @@ function render() {
 
     // Wire save contact buttons
     document.querySelectorAll('.save-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
+      btn.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
         const idx=parseInt(btn.getAttribute('data-idx'));
         if(searchResults[idx])saveContact(searchResults[idx]);
       });
+    });
+
+    // Wire card tap to expand
+    document.querySelectorAll('.sr-card').forEach(card=>{
+      card.addEventListener('click', ()=>{
+        const idx=parseInt(card.getAttribute('data-cidx'));
+        if(searchResults[idx]){
+          expandedContact=searchResults[idx];
+          renderExpandedCard();
+        }
+      });
+    });
+
+    // Stop call/action buttons from triggering card expand
+    document.querySelectorAll('.sr-actions a, .sr-actions button').forEach(el=>{
+      el.addEventListener('click', (ev)=>ev.stopPropagation());
     });
     return;
   }
@@ -678,6 +719,70 @@ function render() {
   ueEl.addEventListener('input', checkEmail);
   ueEl.addEventListener('blur', checkEmail);
   checkEmail();
+}
+
+function renderExpandedCard() {
+  var existing = document.getElementById('contactOverlay');
+  if (existing) existing.remove();
+  if (!expandedContact) return;
+
+  var p = expandedContact;
+  var pi = (p.name||'').split(' ').map(function(w){return w[0];}).filter(Boolean).slice(0,2).join('').toUpperCase();
+  var ds = getDirectoryStatus(state.member);
+  var canSeeMobile = !ds.mobileBlocked;
+  var hasCity = !!p.cityCell;
+  var hasMobile = canSeeMobile && !!p.mobilePhone;
+
+  var phonesHtml = '';
+  if (hasCity) {
+    phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">City Cell</div><div class="cf-phone-num"><a href="tel:'+esc(p.cityCell)+'">'+esc(fmtPhone(p.cityCell))+'</a></div></div>';
+  }
+  if (hasMobile) {
+    phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">Mobile Phone</div><div class="cf-phone-num"><a href="tel:'+esc(p.mobilePhone)+'">'+esc(fmtPhone(p.mobilePhone))+'</a></div></div>';
+  }
+  if (!hasCity && !hasMobile) {
+    phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">Phone</div><div class="cf-phone-num" style="color:var(--text-muted);font-size:14px">No phone available</div></div>';
+  }
+
+  var actionsHtml = '';
+  if (hasCity) actionsHtml += '<a href="tel:'+esc(p.cityCell)+'" class="cf-btn cf-btn-call">Call City Cell</a>';
+  if (hasMobile) actionsHtml += '<a href="tel:'+esc(p.mobilePhone)+'" class="cf-btn cf-btn-call">Call Mobile</a>';
+  actionsHtml += '<button class="cf-btn cf-btn-add" id="cfAdd">Add to Contacts</button>';
+  actionsHtml += '<button class="cf-btn cf-btn-close" id="cfClose">Close</button>';
+
+  var overlay = document.createElement('div');
+  overlay.id = 'contactOverlay';
+  overlay.className = 'contact-overlay';
+  overlay.innerHTML =
+    '<div class="contact-full">' +
+      '<div class="cf-header">' +
+        '<div class="cf-avatar">'+pi+'</div>' +
+        '<div class="cf-name">'+esc(p.name)+'</div>' +
+        '<div class="cf-detail">'+esc(p.rank||'')+(p.assignment?' · '+esc(p.assignment):'')+'</div>' +
+        (p.serialNumber?'<div class="cf-serial">#'+esc(p.serialNumber)+'</div>':'') +
+      '</div>' +
+      '<div class="cf-body">' +
+        '<div class="cf-section">' +
+          '<div class="cf-section-title">Phone Numbers</div>' +
+          phonesHtml +
+        '</div>' +
+      '</div>' +
+      '<div class="cf-actions">' +
+        actionsHtml +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', function(ev) {
+    if (ev.target === overlay) { expandedContact = null; renderExpandedCard(); }
+  });
+  document.getElementById('cfClose').addEventListener('click', function() {
+    expandedContact = null; renderExpandedCard();
+  });
+  document.getElementById('cfAdd').addEventListener('click', function() {
+    saveContact(p);
+  });
 }
 
 render();
