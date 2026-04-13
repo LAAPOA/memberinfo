@@ -75,27 +75,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .search-empty{text-align:center;padding:30px 20px;color:var(--text-muted);font-size:14px}
 .sr-card{cursor:pointer}
 .sr-card:active{background:var(--surface-raised)}
-.contact-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .15s ease}
+.contact-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .15s ease}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.contact-full{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:400px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.5)}
-.cf-header{padding:28px 24px 20px;text-align:center;border-bottom:1px solid var(--border)}
-.cf-avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:var(--navy);margin:0 auto 14px}
+.contact-full{background:var(--surface);border:1px solid var(--border-bright);border-radius:20px;width:100%;max-width:360px;max-height:85vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.6)}
+.cf-header{padding:32px 28px 24px;text-align:center;border-bottom:1px solid var(--border)}
+.cf-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:var(--navy);margin:0 auto 16px}
 .cf-name{font-size:22px;font-weight:700}
-.cf-detail{font-size:14px;color:var(--text-dim);margin-top:4px}
-.cf-serial{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-muted);margin-top:4px}
-.cf-body{padding:20px 24px}
+.cf-detail{font-size:18px;color:var(--text-dim);margin-top:6px;line-height:1.4}
+.cf-serial{font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--text-muted);margin-top:6px}
+.cf-body{padding:24px 28px}
 .cf-section{margin-bottom:18px}
 .cf-section-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:12px}
-.cf-phone{padding:12px 0;border-bottom:1px solid var(--border)}
+.cf-phone{padding:14px 0;border-bottom:1px solid var(--border)}
 .cf-phone:last-child{border-bottom:none}
-.cf-phone-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:4px}
-.cf-phone-num{font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--gold-light)}
-.cf-phone-num a{color:var(--gold-light);text-decoration:none}
-.cf-actions{padding:16px 24px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
-.cf-btn{padding:14px;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;border:none;font-family:inherit;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
-.cf-btn-call{background:var(--green);color:white}
+.cf-phone-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:6px}
+.cf-phone-num{font-family:'JetBrains Mono',monospace;font-size:22px;color:var(--gold-light)}
+.cf-phone-num a{color:var(--gold-light);text-decoration:none;border-bottom:1px dashed var(--border-bright);padding-bottom:2px}
+.cf-phone-num a:active{color:var(--gold)}
+.cf-phone-hint{font-size:10px;color:var(--text-muted);margin-top:4px}
+.cf-actions{padding:16px 28px 24px;display:flex;flex-direction:column;gap:10px}
+.cf-btn{padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;font-family:inherit;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
 .cf-btn-add{background:var(--gold);color:var(--navy)}
-.cf-btn-close{background:none;border:1px solid var(--border);color:var(--text)}
+.cf-btn-close{background:none;border:1px solid var(--border);color:var(--text);border-radius:12px}
 </style>
 </head>
 <body>
@@ -735,18 +736,16 @@ function renderExpandedCard() {
 
   var phonesHtml = '';
   if (hasCity) {
-    phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">City Cell</div><div class="cf-phone-num"><a href="tel:'+esc(p.cityCell)+'">'+esc(fmtPhone(p.cityCell))+'</a></div></div>';
+    phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">City Cell</div><div class="cf-phone-num"><a href="tel:'+esc(p.cityCell)+'">'+esc(fmtPhone(p.cityCell))+'</a></div><div class="cf-phone-hint">Tap number to dial</div></div>';
   }
   if (hasMobile) {
-    phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">Mobile Phone</div><div class="cf-phone-num"><a href="tel:'+esc(p.mobilePhone)+'">'+esc(fmtPhone(p.mobilePhone))+'</a></div></div>';
+    phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">Mobile Phone</div><div class="cf-phone-num"><a href="tel:'+esc(p.mobilePhone)+'">'+esc(fmtPhone(p.mobilePhone))+'</a></div><div class="cf-phone-hint">Tap number to dial</div></div>';
   }
   if (!hasCity && !hasMobile) {
     phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">Phone</div><div class="cf-phone-num" style="color:var(--text-muted);font-size:14px">No phone available</div></div>';
   }
 
   var actionsHtml = '';
-  if (hasCity) actionsHtml += '<a href="tel:'+esc(p.cityCell)+'" class="cf-btn cf-btn-call">Call City Cell</a>';
-  if (hasMobile) actionsHtml += '<a href="tel:'+esc(p.mobilePhone)+'" class="cf-btn cf-btn-call">Call Mobile</a>';
   actionsHtml += '<button class="cf-btn cf-btn-add" id="cfAdd">Add to Contacts</button>';
   actionsHtml += '<button class="cf-btn cf-btn-close" id="cfClose">Close</button>';
 
