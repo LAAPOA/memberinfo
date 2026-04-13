@@ -316,9 +316,33 @@ function generateVCard(person) {
 
 function saveContact(person) {
   const vcf = generateVCard(person);
-  // Use data URI - triggers native contact import on iOS and Android
-  const uri = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(vcf);
-  window.open(uri, '_self');
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  
+  if (isIOS) {
+    // iOS: data URI triggers native contact import
+    const uri = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(vcf);
+    window.open(uri, '_self');
+  } else {
+    // Android: download then prompt to open
+    const blob = new Blob([vcf], {type:'text/x-vcard'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (person.name||'contact').replace(/\s+/g,'_') + '.vcf';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      // Show toast to guide user
+      var toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface-raised);color:var(--gold);padding:14px 20px;border-radius:12px;font-size:14px;z-index:999;border:1px solid var(--border-bright);text-align:center;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.5)';
+      toast.innerHTML = 'Tap the downloaded file in your notification bar to add to Contacts';
+      document.body.appendChild(toast);
+      setTimeout(function(){document.body.removeChild(toast);}, 5000);
+    }, 500);
+  }
 }
 
 function render() {
