@@ -206,6 +206,7 @@ async function handleUpdate(e) {
     serialNumber: serial,
     rank: state.member.rank, mou: state.member.mou, department: state.member.department,
     assignment: document.getElementById('ua')?.value || '',
+    retirement: document.getElementById('uretire')?.value || '',
     phone: document.getElementById('up')?.value?.trim() || '',
     email: email,
     address: document.getElementById('uaddr')?.value?.trim() || '',
@@ -417,6 +418,7 @@ function render() {
         '<div class="info-row"><span class="info-label">MOU</span><span class="info-val">'+esc(m.mou||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Department</span><span class="info-val">'+esc(m.department||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Assignment</span><span class="info-val">'+esc(m.assignment||'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">Retirement</span><span class="info-val">'+esc(m.retirement||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">CID</span><span class="info-val" style="font-family:\'JetBrains Mono\',monospace">'+esc(m.cid||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Status</span><span class="info-val">'+esc(m.memberStatus||'—')+'</span></div>' +
         '<div class="section-title">Contact</div>' +
@@ -623,6 +625,7 @@ function render() {
         '<div class="field"><label>Department</label><input type="text" value="'+esc(m.department)+'" readonly></div>' +
       '</div>' +
       '<div class="field"><label>Assignment</label><select id="ua">'+assignHtml+'</select></div>' +
+      '<div class="field"><label>Retirement System</label><select id="uretire"><option value="">— Select —</option><option value="LAFPP"'+(m.retirement==='LAFPP'?' selected':'')+'>LAFPP</option><option value="LACERS"'+(m.retirement==='LACERS'?' selected':'')+'>LACERS</option></select></div>' +
       '<div class="section-title">Contact Information</div>' +
       '<div class="field"><label>Mobile Phone</label><input id="up" type="tel" value="'+esc(m.phone)+'" placeholder="(310) 555-0100"></div>' +
       '<div class="field"><label>City Cell'+(m.cityCell?'':' <span style="color:var(--text-muted)">(not provided)</span>')+'</label><input id="ucitycell" type="tel" value="'+esc(m.cityCell)+'" placeholder="City-issued cell number"></div>' +
