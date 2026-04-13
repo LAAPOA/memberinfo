@@ -414,7 +414,7 @@ function render() {
 
   // Directory blocked view
   if (state.tab === 'directory_blocked') {
-    const ds = state._dirStatus || getDirectoryStatus(m);
+    const ds = getDirectoryStatus(m);
     app.innerHTML =
       '<div class="card">' +
         '<div class="member-header">' +
@@ -431,7 +431,7 @@ function render() {
           '<div style="font-size:48px;margin-bottom:16px">🔒</div>' +
           '<div style="font-size:16px;font-weight:600;margin-bottom:12px">Directory Access Restricted</div>' +
           '<div style="font-size:13px;color:var(--text-dim);line-height:1.6;max-width:320px;margin:0 auto">'+esc(ds.reason)+'</div>' +
-          (ds.countdownMs>0?'<div id="countdown" style="margin-top:16px;font-family:\'JetBrains Mono\',monospace;font-size:24px;color:var(--gold)"></div>':'') +
+          (ds.countdownMs>0?'<div id="countdown" style="margin-top:20px;font-family:\'JetBrains Mono\',monospace;font-size:36px;color:var(--gold);letter-spacing:2px"></div><div style="font-size:11px;color:var(--text-muted);margin-top:6px">until access is restored</div>':'') +
         '</div>' +
         '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
