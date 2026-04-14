@@ -198,9 +198,16 @@ async function handleUpdate(e) {
     }
   }
   const serial = document.getElementById('userial')?.value?.trim() || '';
-  if (serial && !/^\d{5}$/.test(serial)) {
-    setState({error:'Serial number must be exactly 5 digits (e.g., 01234)'});
-    return;
+  const isMou65 = state.member.mou === 'MOU 65';
+  if (serial) {
+    if (isMou65 && !/^\d{4}$/.test(serial)) {
+      setState({error:'Serial number must be exactly 4 digits for Park Rangers (e.g., 0123)'});
+      return;
+    }
+    if (!isMou65 && !/^\d{5}$/.test(serial)) {
+      setState({error:'Serial number must be exactly 5 digits (e.g., 01234)'});
+      return;
+    }
   }
   const updates = {
     serialNumber: serial,
@@ -618,7 +625,7 @@ function render() {
         '<button class="tab" id="tabDir">Directory</button>' +
       '</div>' +
       '<div class="section-title">Rank & Assignment</div>' +
-      '<div class="field"><label>Serial Number</label><input id="userial" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" value="'+esc(m.serialNumber)+'" placeholder="00000" style="font-family:\'JetBrains Mono\',monospace;letter-spacing:2px"></div>' +
+      '<div class="field"><label>Serial Number</label><input id="userial" type="text" inputmode="numeric" pattern="[0-9]{'+(m.mou==='MOU 65'?'4':'5')+'}" maxlength="'+(m.mou==='MOU 65'?'4':'5')+'" value="'+esc(m.serialNumber)+'" placeholder="'+(m.mou==='MOU 65'?'0000':'00000')+'" style="font-family:\'JetBrains Mono\',monospace;letter-spacing:2px"></div>' +
       '<div class="field"><label>Rank</label><select id="ur">'+rankHtml+'</select></div>' +
       '<div class="field-row">' +
         '<div class="field"><label>MOU</label><input type="text" value="'+esc(m.mou)+'" readonly></div>' +
