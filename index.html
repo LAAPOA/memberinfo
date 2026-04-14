@@ -526,7 +526,7 @@ function render() {
             '<div class="sr-avatar">'+pi+'</div>' +
             '<div class="sr-info">' +
               '<div class="sr-name">'+esc(p.name)+'</div>' +
-              '<div class="sr-detail">'+esc(p.rank||'')+(p.assignment?' \xb7 '+esc(p.assignment):'')+(p.serialNumber?' \xb7 #'+esc(p.serialNumber):'')+'</div>' +
+              '<div class="sr-detail">'+esc(p.rank||'')+(p.assignment?' \xb7 '+esc(p.assignment):'')+(p.serialNumber?' \xb7 Serial \u2116 '+esc(p.serialNumber):'')+'</div>' +
               phonesHtml +
             '</div>' +
             '<div class="sr-actions">' +
@@ -768,7 +768,7 @@ function renderExpandedCard() {
         '<div class="cf-avatar">'+pi+'</div>' +
         '<div class="cf-name">'+esc(p.name)+'</div>' +
         '<div class="cf-detail">'+esc(p.rank||'')+(p.assignment?' · '+esc(p.assignment):'')+'</div>' +
-        (p.serialNumber?'<div class="cf-serial">#'+esc(p.serialNumber)+'</div>':'') +
+        (p.serialNumber?'<div class="cf-serial">Serial \u2116 '+esc(p.serialNumber)+'</div>':'') +
       '</div>' +
       '<div class="cf-body">' +
         '<div class="cf-section">' +
