@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LAAPOA">
+<meta name="theme-color" content="#0B1A33">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>LAAPOA Member Info</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -73,6 +79,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .sr-btn:hover{border-color:var(--border-bright);background:var(--gold-dim);color:var(--gold)}
 .sr-btn.saved{background:var(--green-dim);border-color:transparent;color:var(--green)}
 .search-empty{text-align:center;padding:30px 20px;color:var(--text-muted);font-size:14px}
+.search-loading{text-align:center;padding:30px 0}
+.search-loading .sl-text{font-size:15px;color:var(--text);font-weight:500;margin-bottom:14px}
+.search-loading .sl-dots{display:inline-flex;gap:6px}
+.search-loading .sl-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:slwave 1.2s ease-in-out infinite}
+.search-loading .sl-dot:nth-child(2){animation-delay:.15s}
+.search-loading .sl-dot:nth-child(3){animation-delay:.3s}
+.search-loading .sl-dot:nth-child(4){animation-delay:.45s}
+.search-loading .sl-dot:nth-child(5){animation-delay:.6s}
+@keyframes slwave{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-12px);opacity:1}}
 .sr-card{cursor:pointer}
 .sr-card:active{background:var(--surface-raised)}
 .contact-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .15s ease}
@@ -96,7 +111,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .cf-actions{padding:16px 28px 24px;display:flex;flex-direction:column;gap:10px}
 .cf-btn{padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;font-family:inherit;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
 .cf-btn-add{background:var(--gold);color:var(--navy)}
-.cf-btn-close{background:none;border:1px solid var(--border);color:var(--text);border-radius:12px}
 </style>
 </head>
 <body>
@@ -152,7 +166,7 @@ function checkTokenExpiry() {
     const raw = atob(state.token);
     const parts = raw.split('|');
     const elapsed = (Date.now() - parseInt(parts[1])) / (1000 * 60 * 60);
-    if (elapsed > 8) {
+    if (elapsed > 720) { // 30 days
       clearSession();
       return;
     }
@@ -341,8 +355,16 @@ function generateVCard(person) {
     'ORG:LAAPOA'+(person.assignment?' - '+person.assignment:''),
     'TITLE:'+(person.rank||''),
   ];
-  if(person.cityCell)lines.push('TEL;TYPE=WORK,CELL:'+person.cityCell.replace(/[^+\d]/g,''));
-  if(person.mobilePhone)lines.push('TEL;TYPE=CELL:'+person.mobilePhone.replace(/[^+\d]/g,''));
+  if(person.cityCell){
+    var cc=person.cityCell.replace(/[^+\d]/g,'');
+    lines.push('item1.TEL:'+cc);
+    lines.push('item1.X-ABLabel:City Cell');
+  }
+  if(person.mobilePhone){
+    var mp=person.mobilePhone.replace(/[^+\d]/g,'');
+    lines.push('item2.TEL:'+mp);
+    lines.push('item2.X-ABLabel:Mobile');
+  }
   lines.push('END:VCARD');
   return lines.join('\r\n');
 }
@@ -502,7 +524,7 @@ function render() {
   if (state.tab === 'directory') {
     let resultsHtml = '';
     if (searchLoading) {
-      resultsHtml = '<div class="search-empty">Searching...</div>';
+      resultsHtml = '<div class="search-loading"><div class="sl-text">Searching</div><div class="sl-dots"><div class="sl-dot"></div><div class="sl-dot"></div><div class="sl-dot"></div><div class="sl-dot"></div><div class="sl-dot"></div></div></div>';
     } else if (searchQuery.length >= 2 && searchResults.length === 0) {
       resultsHtml = '<div class="search-empty">No members found for "'+esc(searchQuery)+'"</div>';
     } else if (searchResults.length > 0) {
@@ -735,6 +757,7 @@ function render() {
 function renderExpandedCard() {
   var existing = document.getElementById('contactOverlay');
   if (existing) existing.remove();
+  if (window._cardTimer) { clearInterval(window._cardTimer); window._cardTimer = null; }
   if (!expandedContact) return;
 
   var p = expandedContact;
@@ -755,19 +778,23 @@ function renderExpandedCard() {
     phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">Phone</div><div class="cf-phone-num" style="color:var(--text-muted);font-size:14px">No phone available</div></div>';
   }
 
-  var actionsHtml = '';
-  actionsHtml += '<button class="cf-btn cf-btn-add" id="cfAdd">Add to Contacts</button>';
-  actionsHtml += '<button class="cf-btn cf-btn-close" id="cfClose">Close</button>';
-
   var overlay = document.createElement('div');
   overlay.id = 'contactOverlay';
   overlay.className = 'contact-overlay';
   overlay.innerHTML =
-    '<div class="contact-full">' +
+    '<div class="contact-full" style="position:relative;">' +
+      '<div id="cfCloseBtn" style="position:absolute;top:14px;right:14px;width:36px;height:36px;cursor:pointer;z-index:2;">' +
+        '<svg viewBox="0 0 36 36" width="36" height="36">' +
+          '<circle cx="18" cy="18" r="16" fill="none" stroke="rgba(198,151,63,.2)" stroke-width="2"/>' +
+          '<circle id="cfRing" cx="18" cy="18" r="16" fill="none" stroke="#C6973F" stroke-width="2" stroke-dasharray="100.53" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition:stroke-dashoffset 1s linear;"/>' +
+          '<line x1="13" y1="13" x2="23" y2="23" stroke="#8A8FA0" stroke-width="1.5" stroke-linecap="round"/>' +
+          '<line x1="23" y1="13" x2="13" y2="23" stroke="#8A8FA0" stroke-width="1.5" stroke-linecap="round"/>' +
+        '</svg>' +
+      '</div>' +
       '<div class="cf-header">' +
         '<div class="cf-avatar">'+pi+'</div>' +
         '<div class="cf-name">'+esc(p.name)+'</div>' +
-        '<div class="cf-detail">'+esc(p.rank||'')+(p.assignment?' · '+esc(p.assignment):'')+'</div>' +
+        '<div class="cf-detail">'+esc(p.rank||'')+(p.assignment?' \xb7 '+esc(p.assignment):'')+'</div>' +
         (p.serialNumber?'<div class="cf-serial">Serial \u2116 '+esc(p.serialNumber)+'</div>':'') +
       '</div>' +
       '<div class="cf-body">' +
@@ -777,24 +804,46 @@ function renderExpandedCard() {
         '</div>' +
       '</div>' +
       '<div class="cf-actions">' +
-        actionsHtml +
+        '<button class="cf-btn cf-btn-add" id="cfAdd">Add to Contacts</button>' +
       '</div>' +
     '</div>';
 
   document.body.appendChild(overlay);
 
+  function closeCard() {
+    if (window._cardTimer) { clearInterval(window._cardTimer); window._cardTimer = null; }
+    expandedContact = null;
+    renderExpandedCard();
+  }
+
   overlay.addEventListener('click', function(ev) {
-    if (ev.target === overlay) { expandedContact = null; renderExpandedCard(); }
+    if (ev.target === overlay) closeCard();
   });
-  document.getElementById('cfClose').addEventListener('click', function() {
-    expandedContact = null; renderExpandedCard();
-  });
+  document.getElementById('cfCloseBtn').addEventListener('click', closeCard);
   document.getElementById('cfAdd').addEventListener('click', function() {
     saveContact(p);
   });
+
+  // 60-second countdown ring + auto-close
+  var ring = document.getElementById('cfRing');
+  var circumference = 2 * Math.PI * 16;
+  ring.style.strokeDasharray = circumference;
+  var elapsed = 0;
+  var total = 60;
+  window._cardTimer = setInterval(function() {
+    elapsed++;
+    var progress = elapsed / total;
+    ring.style.strokeDashoffset = circumference * progress;
+    if (elapsed >= total) closeCard();
+  }, 1000);
 }
 
 render();
+
+// Register service worker for PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
 </script>
 </body>
 </html>
