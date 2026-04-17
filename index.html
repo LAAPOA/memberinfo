@@ -88,6 +88,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .search-loading .sl-dot:nth-child(4){animation-delay:.45s}
 .search-loading .sl-dot:nth-child(5){animation-delay:.6s}
 @keyframes slwave{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-12px);opacity:1}}
+.tabs{display:flex;flex-wrap:wrap;gap:0;margin-bottom:16px}
+.tab{font-size:12px;padding:8px 10px;flex:1;min-width:0}
+.bb-post{background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
+.bb-meta{font-size:11px;color:var(--text-muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.bb-serial{font-family:'JetBrains Mono',monospace}
+.bb-title{font-size:15px;font-weight:600;margin-bottom:6px}
+.bb-body{font-size:13px;color:var(--text-dim);line-height:1.6;white-space:pre-wrap}
+.bb-delete{font-size:11px;color:var(--red);cursor:pointer;padding:4px 8px;border:1px solid var(--red);border-radius:6px;background:none;font-family:inherit}
+.bb-compose{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;padding:16px;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius)}
+.bb-compose input,.bb-compose textarea{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;-webkit-appearance:none}
+.bb-compose input:focus,.bb-compose textarea:focus{border-color:var(--gold)}
+.bb-compose textarea{resize:vertical;min-height:80px}
+.ann-post{background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
+.ann-meta{font-size:11px;color:var(--text-muted);margin-bottom:6px}
+.ann-title{font-size:15px;font-weight:600;margin-bottom:6px;color:var(--gold)}
+.ann-body{font-size:13px;color:var(--text-dim);line-height:1.6;white-space:pre-wrap}
+.bb-tab-label{display:inline}
 .sr-card{cursor:pointer}
 .sr-card:active{background:var(--surface-raised)}
 .contact-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .15s ease}
@@ -403,6 +420,32 @@ function saveContact(person) {
 function render() {
   const app = document.getElementById('app');
 
+  function tabBar(active) {
+    var bbLabel = 'Mem<span style="font-weight:700;color:var(--red)">BB</span>ers';
+    var infoLabel = 'My Info <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;opacity:.6"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+    return '<div class="tabs">' +
+      '<button class="tab'+(active==='info'||active==='edit'?' on':'')+'" id="tabInfo">'+infoLabel+'</button>' +
+      '<button class="tab'+(active==='directory'||active==='directory_blocked'?' on':'')+'" id="tabDir">Directory</button>' +
+      '<button class="tab'+(active==='announce'?' on':'')+'" id="tabAnn">Announce</button>' +
+      '<button class="tab'+(active==='bulletin'?' on':'')+'" id="tabBB">'+bbLabel+'</button>' +
+    '</div>';
+  }
+
+  function wireTabEvents() {
+    var ti=document.getElementById('tabInfo');
+    var td=document.getElementById('tabDir');
+    var ta=document.getElementById('tabAnn');
+    var tb=document.getElementById('tabBB');
+    if(ti)ti.addEventListener('click',function(){setState({tab:'info',error:'',success:''});});
+    if(td)td.addEventListener('click',function(){
+      var ds=getDirectoryStatus(state.member);
+      if(ds.blocked){setState({tab:'directory_blocked'});return;}
+      searchResults=[];searchQuery='';setState({tab:'directory',success:''});
+    });
+    if(ta)ta.addEventListener('click',function(){setState({tab:'announce'});});
+    if(tb)tb.addEventListener('click',function(){setState({tab:'bulletin'});});
+  }
+
   if (state.view === 'login') {
     app.innerHTML =
       '<div class="card">' +
@@ -436,11 +479,8 @@ function render() {
           '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+(m.department?' · '+esc(m.department):'')+'</div></div>' +
         '</div>' +
         (state.success ? '<div class="ok">'+esc(state.success)+'</div>' : '') +
-        '<div class="tabs">' +
-          '<button class="tab on" id="tabInfo">My Info</button>' +
-          '<button class="tab" id="tabEdit">Update</button>' +
-          '<button class="tab" id="tabDir">Directory</button>' +
-        '</div>' +
+        tabBar('info') +
+        '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-outline" id="editToggle" style="font-size:12px;padding:6px 14px;gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit</button></div>' +
         '<div class="section-title">Employment</div>' +
         '<div class="info-row"><span class="info-label">Serial #</span><span class="info-val" style="font-family:\'JetBrains Mono\',monospace">'+esc(m.serialNumber||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Rank</span><span class="info-val">'+esc(m.rank||'—')+'</span></div>' +
@@ -458,13 +498,9 @@ function render() {
         '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
-    document.getElementById('tabEdit').addEventListener('click', ()=>setState({tab:'edit',success:''}));
-    document.getElementById('tabDir').addEventListener('click', ()=>{
-      const ds=getDirectoryStatus(state.member);
-      if(ds.blocked){setState({tab:'directory_blocked',success:'',_dirStatus:ds});return;}
-      searchResults=[];searchQuery='';setState({tab:'directory',success:''});
-    });
+    wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
+    document.getElementById('editToggle').addEventListener('click', function(){setState({tab:'edit',error:'',success:''});});
     return;
   }
 
@@ -478,11 +514,7 @@ function render() {
           '<div><div class="member-name">'+esc(m.name)+'</div>' +
           '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+'</div></div>' +
         '</div>' +
-        '<div class="tabs">' +
-          '<button class="tab" id="tabInfo">My Info</button>' +
-          '<button class="tab" id="tabEdit">Update</button>' +
-          '<button class="tab on" id="tabDir">Directory</button>' +
-        '</div>' +
+        tabBar('directory_blocked') +
         '<div style="text-align:center;padding:40px 20px">' +
           '<div style="font-size:48px;margin-bottom:16px">🔒</div>' +
           '<div style="font-size:16px;font-weight:600;margin-bottom:12px">Directory Access Restricted</div>' +
@@ -493,13 +525,7 @@ function render() {
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
 
-    document.getElementById('tabInfo').addEventListener('click', ()=>setState({tab:'info'}));
-    document.getElementById('tabEdit').addEventListener('click', ()=>setState({tab:'edit',success:''}));
-    document.getElementById('tabDir').addEventListener('click', ()=>{
-      const ds2=getDirectoryStatus(state.member);
-      if(ds2.blocked){setState({tab:'directory_blocked',_dirStatus:ds2});return;}
-      searchResults=[];searchQuery='';setState({tab:'directory',success:''});
-    });
+    wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
 
     // Live countdown timer
@@ -568,19 +594,14 @@ function render() {
           '<div><div class="member-name">'+esc(m.name)+'</div>' +
           '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+'</div></div>' +
         '</div>' +
-        '<div class="tabs">' +
-          '<button class="tab" id="tabInfo">My Info</button>' +
-          '<button class="tab" id="tabEdit">Update</button>' +
-          '<button class="tab on" id="tabDir">Directory</button>' +
-        '</div>' +
+        tabBar('directory') +
         '<div class="search-input"><input id="searchQ" type="text" placeholder="Search by name or serial #..." value="'+esc(searchQuery)+'"><button class="btn btn-gold" id="searchBtn" style="width:auto;min-width:80px;margin-left:8px">Search</button></div>' +
         resultsHtml +
         '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
 
-    document.getElementById('tabInfo').addEventListener('click', ()=>setState({tab:'info'}));
-    document.getElementById('tabEdit').addEventListener('click', ()=>setState({tab:'edit',success:''}));
+    wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
     const sq = document.getElementById('searchQ');
     sq.addEventListener('keydown', e=>{searchQuery=sq.value;if(e.key==='Enter')doSearch();});
@@ -614,6 +635,97 @@ function render() {
     return;
   }
 
+  // Announcements view
+  if (state.tab === 'announce') {
+    var annHtml = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Loading announcements...</div>';
+    app.innerHTML =
+      '<div class="card">' +
+        '<div class="member-header">' +
+          '<div class="avatar">'+initials+'</div>' +
+          '<div><div class="member-name">'+esc(m.name)+'</div>' +
+          '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+'</div></div>' +
+        '</div>' +
+        tabBar('announce') +
+        '<div id="annContent">'+annHtml+'</div>' +
+        '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
+      '</div>' +
+      '<div class="footer">LAAPOA Member Info</div>';
+    wireTabEvents();
+    document.getElementById('logoutBtn').addEventListener('click', clearSession);
+    // Load announcements
+    apiCall('getAnnouncements',{token:state.token}).then(function(res){
+      var el=document.getElementById('annContent');
+      if(!el)return;
+      if(res.error){el.innerHTML='<div class="err">'+esc(res.error)+'</div>';return;}
+      if(!res.posts||res.posts.length===0){el.innerHTML='<div class="search-empty">No announcements yet</div>';return;}
+      var html='';
+      res.posts.forEach(function(p){
+        html+='<div class="ann-post"><div class="ann-meta">'+esc(p.timestamp||'')+(p.postedBy?' · '+esc(p.postedBy):'')+'</div><div class="ann-title">'+esc(p.title)+'</div><div class="ann-body">'+esc(p.body)+'</div></div>';
+      });
+      el.innerHTML=html;
+    });
+    return;
+  }
+
+  // Bulletin Board view
+  if (state.tab === 'bulletin') {
+    var bbHtml = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Loading board...</div>';
+    app.innerHTML =
+      '<div class="card">' +
+        '<div class="member-header">' +
+          '<div class="avatar">'+initials+'</div>' +
+          '<div><div class="member-name">'+esc(m.name)+'</div>' +
+          '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+'</div></div>' +
+        '</div>' +
+        tabBar('bulletin') +
+        '<div class="bb-compose" id="bbCompose">' +
+          '<input id="bbTitle" type="text" placeholder="Post title" maxlength="200">' +
+          '<textarea id="bbBody" placeholder="Write your message..." maxlength="2000"></textarea>' +
+          '<button class="btn btn-gold" id="bbPost">Post to Board</button>' +
+        '</div>' +
+        '<div id="bbContent">'+bbHtml+'</div>' +
+        '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
+      '</div>' +
+      '<div class="footer">LAAPOA Member Info</div>';
+    wireTabEvents();
+    document.getElementById('logoutBtn').addEventListener('click', clearSession);
+    document.getElementById('bbPost').addEventListener('click', function(){
+      var title=document.getElementById('bbTitle').value.trim();
+      var body=document.getElementById('bbBody').value.trim();
+      if(!title||!body){return;}
+      var btn=document.getElementById('bbPost');
+      btn.disabled=true;btn.textContent='Posting...';
+      apiCall('postBulletin',{token:state.token,title:title,body:body,mou:m.mou,authorName:m.name,authorSerial:m.serialNumber||'',authorCid:m.cid||''}).then(function(res){
+        if(res.ok){setState({tab:'bulletin'});}
+        else{btn.disabled=false;btn.textContent='Post to Board';}
+      });
+    });
+    // Load bulletin board
+    apiCall('getBulletinBoard',{token:state.token,mou:m.mou}).then(function(res){
+      var el=document.getElementById('bbContent');
+      if(!el)return;
+      if(res.error){el.innerHTML='<div class="err">'+esc(res.error)+'</div>';return;}
+      if(!res.posts||res.posts.length===0){el.innerHTML='<div class="search-empty">No posts yet. Be the first!</div>';return;}
+      var html='';
+      res.posts.forEach(function(p){
+        html+='<div class="bb-post"><div class="bb-meta"><span><span class="bb-serial">Serial \u2116 '+esc(p.authorSerial||'—')+'</span> · '+esc(p.timestamp||'')+'</span><button class="bb-delete" data-id="'+esc(p.id)+'">Delete</button></div><div class="bb-title">'+esc(p.title)+'</div><div class="bb-body">'+esc(p.body)+'</div></div>';
+      });
+      el.innerHTML=html;
+      // Wire delete buttons
+      el.querySelectorAll('.bb-delete').forEach(function(btn){
+        btn.addEventListener('click',function(){
+          var id=btn.getAttribute('data-id');
+          if(!confirm('Delete this post?'))return;
+          btn.textContent='Deleting...';btn.disabled=true;
+          apiCall('deleteBulletin',{token:state.token,postId:id,authorName:m.name}).then(function(res){
+            if(res.ok)setState({tab:'bulletin'});
+          });
+        });
+      });
+    });
+    return;
+  }
+
   // Edit view
   const curRankLabel = rankToLabel(m.rank, m.mou);
   const assignOpts = getAssignOptions(m.mou);
@@ -641,11 +753,7 @@ function render() {
       '</div>' +
       (state.error ? '<div class="err">'+esc(state.error)+'</div>' : '') +
       (state.success ? '<div class="ok">'+esc(state.success)+'</div>' : '') +
-      '<div class="tabs">' +
-        '<button class="tab" id="tabInfo">My Info</button>' +
-        '<button class="tab on" id="tabEdit">Update</button>' +
-        '<button class="tab" id="tabDir">Directory</button>' +
-      '</div>' +
+      tabBar('edit') +
       '<div class="section-title">Rank & Assignment</div>' +
       '<div class="field"><label>Serial Number</label><input id="userial" type="text" inputmode="numeric" pattern="[0-9]{'+(m.mou==='MOU 65'?'4':'5')+'}" maxlength="'+(m.mou==='MOU 65'?'4':'5')+'" value="'+esc(m.serialNumber)+'" placeholder="'+(m.mou==='MOU 65'?'0000':'00000')+'" style="font-family:\'JetBrains Mono\',monospace;letter-spacing:2px"></div>' +
       '<div class="field"><label>Rank</label><select id="ur">'+rankHtml+'</select></div>' +
@@ -699,12 +807,7 @@ function render() {
 
   document.getElementById('saveBtn').addEventListener('click', handleUpdate);
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
-  document.getElementById('tabInfo').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
-  document.getElementById('tabDir').addEventListener('click', ()=>{
-    const ds=getDirectoryStatus(state.member);
-    if(ds.blocked){setState({tab:'directory_blocked',_dirStatus:ds});return;}
-    searchResults=[];searchQuery='';setState({tab:'directory',success:''});
-  });
+  wireTabEvents();
   document.getElementById('ur').addEventListener('change', (ev) => handleRankChange(ev.target.value));
   document.getElementById('optOutToggle').addEventListener('click', function(){
     if (state.member.directoryOptOut === 'true') {
