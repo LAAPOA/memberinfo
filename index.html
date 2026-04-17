@@ -198,12 +198,18 @@ function checkTokenExpiry() {
 if (state.token) checkTokenExpiry();
 
 async function apiCall(action, payload) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action, _ip:_clientIp, ...payload })
-  });
-  return await res.json();
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action, _ip:_clientIp, ...payload }),
+      redirect: 'follow'
+    });
+    const text = await res.text();
+    try { return JSON.parse(text); } catch(e) { return { error: 'Invalid response from server' }; }
+  } catch(e) {
+    return { error: 'Network error: ' + e.message };
+  }
 }
 
 async function handleLogin(e) {
