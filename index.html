@@ -530,7 +530,7 @@ function render() {
         '<div class="info-row"><span class="info-label">Retirement</span><span class="info-val">'+esc(m.retirement||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">CID</span><span class="info-val" style="font-family:\'JetBrains Mono\',monospace">'+esc(m.cid||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Status</span><span class="info-val">'+esc(m.memberStatus||'—')+'</span></div>' +
-        '<div class="info-row"><span class="info-label">Birthday</span><span class="info-val" style="display:flex;align-items:center;gap:10px">'+esc(m.dob?formatBday(m.dob):'—')+
+        '<div class="info-row"><span class="info-label">Birthday</span><span class="info-val" style="display:flex;align-items:center;gap:10px">'+esc(m.dob?m.dob.replace(/(\d{4})-(\d{2})-(\d{2})/,'$2-$3-$1'):'—')+
           '<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);cursor:pointer"><input type="checkbox" id="bdayOptOut"'+(m.birthdayOptOut==='true'?' checked':'')+' style="cursor:pointer"> Hide from celebration</label>' +
         '</span></div>' +
         '<div class="section-title">Contact</div>' +
@@ -699,7 +699,7 @@ function render() {
       '<div class="footer">LAAPOA Member Info</div>';
     wireTabEvents();
 
-    // Check if we're in celebration window (0430-1430)
+    // Check if we're in celebration window (0430-1030)
     var nowH = new Date().getHours();
     var nowM = new Date().getMinutes();
     var nowTime = nowH * 100 + nowM;
