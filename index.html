@@ -530,9 +530,7 @@ function render() {
         '<div class="info-row"><span class="info-label">Retirement</span><span class="info-val">'+esc(m.retirement||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">CID</span><span class="info-val" style="font-family:\'JetBrains Mono\',monospace">'+esc(m.cid||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Status</span><span class="info-val">'+esc(m.memberStatus||'—')+'</span></div>' +
-        '<div class="info-row"><span class="info-label">Birthday</span><span class="info-val" style="display:flex;align-items:center;gap:10px">'+esc(m.dob?m.dob.replace(/(\d{4})-(\d{2})-(\d{2})/,'$2-$3-$1'):'—')+
-          '<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);cursor:pointer"><input type="checkbox" id="bdayOptOut"'+(m.birthdayOptOut==='true'?' checked':'')+' style="cursor:pointer"> Hide from celebration</label>' +
-        '</span></div>' +
+        '<div class="info-row"><span class="info-label">Birthday</span><span class="info-val">'+esc(m.dob?m.dob.replace(/(\d{4})-(\d{2})-(\d{2})/,'$2-$3-$1'):'—')+'</span></div>' +
         '<div class="section-title">Contact</div>' +
         '<div class="info-row"><span class="info-label">Mobile Phone</span><span class="info-val">'+(m.phone?'<a href="tel:'+esc(m.phone)+'">'+esc(fmtPhone(m.phone))+'</a>':'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">City Cell</span><span class="info-val">'+(m.cityCell?'<a href="tel:'+esc(m.cityCell)+'">'+esc(fmtPhone(m.cityCell))+'</a>':'<span style="color:var(--text-muted)">Not provided</span>')+'</span></div>' +
@@ -544,14 +542,6 @@ function render() {
     wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
     document.getElementById('editToggle').addEventListener('click', function(){setState({tab:'edit',error:'',success:''});});
-    var bdayChk = document.getElementById('bdayOptOut');
-    if (bdayChk) {
-      bdayChk.addEventListener('change', function(){
-        var val = bdayChk.checked ? 'true' : 'false';
-        state.member.birthdayOptOut = val;
-        apiCall('update',{token:state.token,row:state.row,updates:{birthdayOptOut:val}});
-      });
-    }
     return;
   }
 
@@ -934,6 +924,7 @@ function render() {
       '</div>' +
       '<div class="field"><label>Assignment</label><select id="ua">'+assignHtml+'</select></div>' +
       '<div class="field"><label>Retirement System</label><select id="uretire"><option value="">— Select —</option><option value="LAFPP"'+(m.retirement==='LAFPP'?' selected':'')+'>LAFPP</option><option value="LACERS"'+(m.retirement==='LACERS'?' selected':'')+'>LACERS</option></select></div>' +
+      '<div style="display:flex;align-items:center;gap:10px;padding:10px 0"><span style="font-size:13px;color:var(--text-dim)">Birthday: '+esc(m.dob?m.dob.replace(/(\d{4})-(\d{2})-(\d{2})/,'$2-$3-$1'):'—')+'</span><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-muted);cursor:pointer"><input type="checkbox" id="bdayOptOutEdit"'+(m.birthdayOptOut==='true'?' checked':'')+' style="cursor:pointer"> Hide from birthday celebration</label></div>' +
       '<div class="section-title">Contact Information</div>' +
       '<div class="field"><label>Mobile Phone</label><input id="up" type="tel" value="'+esc(m.phone)+'" placeholder="(310) 555-0100"></div>' +
       '<div class="field"><label>City Cell'+(m.cityCell?'':' <span style="color:var(--text-muted)">(not provided)</span>')+'</label><input id="ucitycell" type="tel" value="'+esc(m.cityCell)+'" placeholder="City-issued cell number"></div>' +
@@ -979,6 +970,12 @@ function render() {
   document.getElementById('saveBtn').addEventListener('click', handleUpdate);
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
   wireTabEvents();
+  var bdayChkEdit = document.getElementById('bdayOptOutEdit');
+  if (bdayChkEdit) {
+    bdayChkEdit.addEventListener('change', function(){
+      state.member.birthdayOptOut = bdayChkEdit.checked ? 'true' : 'false';
+    });
+  }
   document.getElementById('ur').addEventListener('change', (ev) => handleRankChange(ev.target.value));
   document.getElementById('optOutToggle').addEventListener('click', function(){
     if (state.member.directoryOptOut === 'true') {
