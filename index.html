@@ -117,7 +117,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .ann-post{background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
 .ann-meta{font-size:11px;color:var(--text-muted);margin-bottom:6px}
 .ann-title{font-size:15px;font-weight:600;margin-bottom:6px;color:var(--gold)}
-.ann-body{font-size:13px;color:var(--text-dim);line-height:1.6;white-space:pre-wrap}
+.ann-body{font-size:13px;color:var(--text-dim);line-height:1.6}
+.ann-body a{color:var(--gold-light);text-decoration:underline}
+.ann-body h2{font-size:18px;margin:8px 0 4px;color:var(--text)}
+.ann-body h3{font-size:16px;margin:6px 0 4px;color:var(--text)}
+.ann-body ul,.ann-body ol{padding-left:20px;margin:4px 0}
 .bb-tab-label{display:inline}
 .sr-card{cursor:pointer}
 .sr-card:active{background:var(--surface-raised)}
@@ -674,7 +678,7 @@ function render() {
       if(!res.posts||res.posts.length===0){el.innerHTML='<div class="search-empty">No announcements yet</div>';return;}
       var html='';
       res.posts.forEach(function(p){
-        html+='<div class="ann-post"><div class="ann-meta">'+esc(p.timestamp||'')+(p.postedBy?' · '+esc(p.postedBy):'')+'</div><div class="ann-title">'+esc(p.title)+'</div><div class="ann-body">'+esc(p.body)+'</div></div>';
+        html+='<div class="ann-post"><div class="ann-meta">'+esc(String(p.timestamp||''))+(p.postedBy?' \u00b7 '+esc(String(p.postedBy)):'')+'</div><div class="ann-title">'+esc(String(p.title||''))+'</div><div class="ann-body">'+String(p.body||'')+'</div></div>';
       });
       el.innerHTML=html;
     }).catch(function(err){
@@ -695,7 +699,11 @@ function render() {
           '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+'</div></div>' +
         '</div>' +
         tabBar('bulletin') +
-        '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button id="bbToggle" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--text);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> New Post</button></div>' +
+        '<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">' +
+          '<button id="bbSearchToggle" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--text);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>' +
+          '<button id="bbToggle" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--text);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> New Post</button>' +
+        '</div>' +
+        '<div id="bbSearchBar" style="display:none;margin-bottom:12px"><input id="bbSearchQ" type="text" placeholder="Search posts..." style="width:100%;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;-webkit-appearance:none"></div>' +
         '<div class="bb-compose" id="bbCompose" style="display:none">' +
           '<input id="bbTitle" type="text" placeholder="Post title" maxlength="200">' +
           '<div class="bb-rte-toolbar" id="bbToolbar">' +
@@ -720,6 +728,15 @@ function render() {
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
     wireTabEvents();
+    document.getElementById('bbSearchToggle').addEventListener('click', function(){
+      var bar=document.getElementById('bbSearchBar');
+      bar.style.display=bar.style.display==='none'?'block':'none';
+      if(bar.style.display==='block')document.getElementById('bbSearchQ').focus();
+      else{document.getElementById('bbSearchQ').value='';filterBBPosts('');}
+    });
+    document.getElementById('bbSearchQ').addEventListener('input', function(){
+      filterBBPosts(this.value.trim().toLowerCase());
+    });
     document.getElementById('bbToggle').addEventListener('click', function(){
       var c=document.getElementById('bbCompose');
       c.style.display=c.style.display==='none'?'flex':'none';
@@ -957,6 +974,14 @@ function render() {
   ueEl.addEventListener('input', checkEmail);
   ueEl.addEventListener('blur', checkEmail);
   checkEmail();
+}
+
+function filterBBPosts(q) {
+  var posts = document.querySelectorAll('#bbContent .bb-post');
+  posts.forEach(function(post) {
+    var text = post.textContent.toLowerCase();
+    post.style.display = (!q || text.includes(q)) ? '' : 'none';
+  });
 }
 
 function renderExpandedCard() {
