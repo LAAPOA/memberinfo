@@ -285,6 +285,7 @@ async function handleUpdate(e) {
     cityCell: document.getElementById('ucitycell')?.value?.trim() || '',
     showMobilePhone: state.member.showMobilePhone || 'false',
     showMobilePhoneTime: state.member.showMobilePhoneTime || '',
+    birthdayOptOut: state.member.birthdayOptOut || 'false',
   };
   setState({loading:true, error:'', success:''});
   const res = await apiCall('update', {token:state.token, row:state.row, updates});
@@ -330,6 +331,16 @@ function fmtPhone(p) {
   if (digits.length === 10) return '(' + digits.slice(0,3) + ') ' + digits.slice(3,6) + '-' + digits.slice(6);
   if (digits.length === 11 && digits[0] === '1') return '(' + digits.slice(1,4) + ') ' + digits.slice(4,7) + '-' + digits.slice(7);
   return p;
+}
+
+function formatBday(dob) {
+  if (!dob) return '';
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var match = String(dob).match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return months[parseInt(match[2])-1] + ' ' + parseInt(match[3]);
+  match = String(dob).match(/(\d{1,2})\/(\d{1,2})/);
+  if (match) return months[parseInt(match[1])-1] + ' ' + parseInt(match[2]);
+  return '';
 }
 
 const COOLDOWN_MS = 1 * 60 * 60 * 1000; // 1 hour
@@ -519,6 +530,9 @@ function render() {
         '<div class="info-row"><span class="info-label">Retirement</span><span class="info-val">'+esc(m.retirement||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">CID</span><span class="info-val" style="font-family:\'JetBrains Mono\',monospace">'+esc(m.cid||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Status</span><span class="info-val">'+esc(m.memberStatus||'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">Birthday</span><span class="info-val" style="display:flex;align-items:center;gap:10px">'+esc(m.dob?formatBday(m.dob):'—')+
+          '<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);cursor:pointer"><input type="checkbox" id="bdayOptOut"'+(m.birthdayOptOut==='true'?' checked':'')+' style="cursor:pointer"> Hide from celebration</label>' +
+        '</span></div>' +
         '<div class="section-title">Contact</div>' +
         '<div class="info-row"><span class="info-label">Mobile Phone</span><span class="info-val">'+(m.phone?'<a href="tel:'+esc(m.phone)+'">'+esc(fmtPhone(m.phone))+'</a>':'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">City Cell</span><span class="info-val">'+(m.cityCell?'<a href="tel:'+esc(m.cityCell)+'">'+esc(fmtPhone(m.cityCell))+'</a>':'<span style="color:var(--text-muted)">Not provided</span>')+'</span></div>' +
@@ -530,6 +544,14 @@ function render() {
     wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
     document.getElementById('editToggle').addEventListener('click', function(){setState({tab:'edit',error:'',success:''});});
+    var bdayChk = document.getElementById('bdayOptOut');
+    if (bdayChk) {
+      bdayChk.addEventListener('change', function(){
+        var val = bdayChk.checked ? 'true' : 'false';
+        state.member.birthdayOptOut = val;
+        apiCall('update',{token:state.token,row:state.row,updates:{birthdayOptOut:val}});
+      });
+    }
     return;
   }
 
