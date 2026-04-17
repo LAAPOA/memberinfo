@@ -733,8 +733,8 @@ function render() {
       var html='';
       res.posts.forEach(function(p){
         var editInfo = '';
-        if (p.editedBySerial) editInfo = '<div style="font-size:10px;color:var(--text-muted);margin-top:6px;font-style:italic">Edited by Serial \u2116 '+esc(String(p.editedBySerial))+' \u00b7 '+esc(p.editedTimestamp||'')+'</div>';
-        html+='<div class="bb-post"><div class="bb-meta"><span><span class="bb-serial">Serial \u2116 '+esc(p.authorSerial||'\u2014')+'</span> \u00b7 '+esc(p.timestamp||'')+'</span><span style="display:flex;gap:6px"><button class="bb-edit" data-id="'+esc(p.id)+'" data-title="'+esc(p.title)+'" data-body="'+esc(p.body)+'">Edit</button><button class="bb-delete" data-id="'+esc(p.id)+'">Delete</button></span></div><div class="bb-title">'+esc(p.title)+'</div><div class="bb-body">'+esc(p.body)+'</div>'+editInfo+'</div>';
+        if (p.editedBySerial) editInfo = '<div style="font-size:10px;color:var(--text-muted);margin-top:6px;font-style:italic">Edited by Serial \u2116 '+esc(String(p.editedBySerial))+' \u00b7 '+esc(String(p.editedTimestamp||''))+'</div>';
+        html+='<div class="bb-post"><div class="bb-meta"><span><span class="bb-serial">Serial \u2116 '+esc(String(p.authorSerial||'\u2014'))+'</span> \u00b7 '+esc(String(p.timestamp||''))+'</span><span style="display:flex;gap:6px"><button class="bb-edit" data-id="'+esc(String(p.id))+'" data-title="'+esc(String(p.title||''))+'" data-body="'+esc(String(p.body||''))+'">Edit</button><button class="bb-delete" data-id="'+esc(String(p.id))+'">Delete</button></span></div><div class="bb-title">'+esc(String(p.title||''))+'</div><div class="bb-body">'+esc(String(p.body||''))+'</div>'+editInfo+'</div>';
       });
       el.innerHTML=html;
       el.querySelectorAll('.bb-edit').forEach(function(btn){
