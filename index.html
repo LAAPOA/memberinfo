@@ -711,46 +711,65 @@ function render() {
           '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+'</div></div>' +
         '</div>' +
         tabBar('announce') +
-        '<div id="bdaySection"></div>' +
         '<div id="annContent">'+annHtml+'</div>' +
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
     wireTabEvents();
 
-    // Check if we're in celebration window (0430-1030)
+    // Load announcements and birthdays together
+    var bdayHtmlGlobal = '';
     var nowH = new Date().getHours();
     var nowM = new Date().getMinutes();
     var nowTime = nowH * 100 + nowM;
-    if (nowTime >= 430 && nowTime <= 1030) {
-      apiCall('getBirthdays',{token:state.token}).then(function(res){
-        var bdayEl = document.getElementById('bdaySection');
-        if (!bdayEl || !res.ok || !res.birthdays || res.birthdays.length === 0) return;
+    var showBday = (nowTime >= 430 && nowTime <= 1430);
+
+    var bdayPromise = showBday ? apiCall('getBirthdays',{token:state.token}) : Promise.resolve({ok:true,birthdays:[]});
+    var annPromise = apiCall('getAnnouncements',{token:state.token});
+
+    Promise.all([bdayPromise, annPromise]).then(function(results){
+      var bdayRes = results[0];
+      var annRes = results[1];
+      var el = document.getElementById('annContent');
+      if (!el) return;
+
+      if (annRes.error) { el.innerHTML='<div class="err">'+esc(annRes.error)+'</div>'; return; }
+
+      // Build birthday HTML
+      var bdayHtml = '';
+      if (showBday && bdayRes.ok && bdayRes.birthdays && bdayRes.birthdays.length > 0) {
         var namesHtml = '';
-        res.birthdays.forEach(function(b){
+        bdayRes.birthdays.forEach(function(b){
           namesHtml += '<div class="bday-name">\ud83c\udf82 ' + esc(String(b.rank)) + ' ' + esc(String(b.name)) + '</div>';
         });
-        bdayEl.innerHTML =
-          '<div class="bday-section">' +
+        bdayHtml =
+          '<div class="bday-section" id="bdaySection">' +
             '<canvas class="bday-canvas" id="bdayCanvas"></canvas>' +
             '<div class="bday-title">\ud83c\udf89 Happy Birthday! \ud83c\udf89</div>' +
             '<div class="bday-subtitle">Celebrating our members today</div>' +
             namesHtml +
           '</div>';
-        startCelebration();
-      });
-    }
+      }
 
-    // Load announcements
-    apiCall('getAnnouncements',{token:state.token}).then(function(res){
-      var el=document.getElementById('annContent');
-      if(!el)return;
-      if(res.error){el.innerHTML='<div class="err">'+esc(res.error)+'</div>';return;}
-      if(!res.posts||res.posts.length===0){el.innerHTML='<div class="search-empty">No announcements yet</div>';return;}
-      var html='';
-      res.posts.forEach(function(p){
-        html+='<div class="ann-post"><div class="ann-meta">'+esc(String(p.timestamp||''))+(p.postedBy?' \u00b7 '+esc(String(p.postedBy)):'')+'</div><div class="ann-title">'+esc(String(p.title||''))+'</div><div class="ann-body">'+String(p.body||'')+'</div></div>';
+      var posts = annRes.posts || [];
+      var bdayPos = annRes.birthdayPosition !== undefined ? Number(annRes.birthdayPosition) : 0;
+
+      if (posts.length === 0 && !bdayHtml) {
+        el.innerHTML = '<div class="search-empty">No announcements yet</div>';
+        return;
+      }
+
+      // Build ordered output with birthday at the correct position
+      var allItems = posts.map(function(p){
+        return '<div class="ann-post"><div class="ann-meta">'+esc(String(p.timestamp||''))+(p.postedBy?' \u00b7 '+esc(String(p.postedBy)):'')+'</div><div class="ann-title">'+esc(String(p.title||''))+'</div><div class="ann-body">'+String(p.body||'')+'</div></div>';
       });
-      el.innerHTML=html;
+
+      if (bdayHtml) {
+        if (bdayPos >= 0 && bdayPos <= allItems.length) allItems.splice(bdayPos, 0, bdayHtml);
+        else allItems.unshift(bdayHtml);
+      }
+
+      el.innerHTML = allItems.join('');
+      if (bdayHtml) startCelebration();
     }).catch(function(err){
       var el=document.getElementById('annContent');
       if(el)el.innerHTML='<div class="err">Failed to load announcements. Please try again.</div>';
