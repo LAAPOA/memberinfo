@@ -61,6 +61,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .tab{flex:1;padding:12px;text-align:center;font-size:14px;font-weight:500;cursor:pointer;color:var(--text-dim);background:var(--navy);transition:all .15s;border:none;font-family:inherit;min-height:44px}
 .tab:hover{color:var(--text)}
 .tab.on{background:var(--gold-dim);color:var(--gold)}
+.tab{position:relative}
+.ann-badge{position:absolute;top:-4px;right:-4px;background:#C0392B;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1}
 @media(max-width:480px){.field-row{grid-template-columns:1fr}.field-row.tri{grid-template-columns:1fr}}
 .search-input{display:flex;gap:8px;margin-bottom:16px}
 .search-input input{flex:1;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;color:var(--text);font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none}
@@ -246,6 +248,18 @@ async function handleLogin(e) {
   if (res.error) { setState({loading:false, error:res.error}); return; }
   setState({view:'info', member:res.member, token:res.token, row:res.row, loading:false, error:'', tab:'info'});
   checkTokenExpiry();
+  // Check announcement count for badge
+  apiCall('getAnnouncements',{token:res.token}).then(function(r){
+    if(r.ok&&r.posts){
+      var newCount=0;
+      r.posts.forEach(function(p){
+        var pid=parseInt(String(p.id));
+        if(pid>annLastSeen)newCount++;
+      });
+      annBadgeCount=newCount;
+      render();
+    }
+  });
 }
 
 async function handleUpdate(e) {
@@ -380,6 +394,8 @@ let searchResults=[];
 let searchQuery='';
 let searchLoading=false;
 let expandedContact=null;
+let annBadgeCount=0;
+let annLastSeen=parseInt(localStorage.getItem('laapoa_ann_seen')||'0');
 
 async function doSearch() {
   const q=searchQuery.trim();
@@ -466,7 +482,7 @@ function render() {
     return '<div class="tabs">' +
       '<button class="tab'+(active==='info'||active==='edit'?' on':'')+'" id="tabInfo">'+infoLabel+'</button>' +
       '<button class="tab'+(active==='directory'||active==='directory_blocked'?' on':'')+'" id="tabDir">Directory</button>' +
-      '<button class="tab'+(active==='announce'?' on':'')+'" id="tabAnn">Announce</button>' +
+      '<button class="tab'+(active==='announce'?' on':'')+'" id="tabAnn">Announce'+(annBadgeCount>0&&active!=='announce'?'<span class="ann-badge">'+annBadgeCount+'</span>':'')+'</button>' +
       '<button class="tab'+(active==='bulletin'?' on':'')+'" id="tabBB">'+bbLabel+'</button>' +
     '</div>';
   }
@@ -482,7 +498,19 @@ function render() {
       if(ds.blocked){setState({tab:'directory_blocked'});return;}
       searchResults=[];searchQuery='';setState({tab:'directory',success:''});
     });
-    if(ta)ta.addEventListener('click',function(){setState({tab:'announce'});});
+    if(ta)ta.addEventListener('click',function(){
+      annBadgeCount=0;
+      // Save the latest announcement ID as seen
+      apiCall('getAnnouncements',{token:state.token}).then(function(r){
+        if(r.ok&&r.posts&&r.posts.length>0){
+          var maxId=0;
+          r.posts.forEach(function(p){var pid=parseInt(String(p.id));if(pid>maxId)maxId=pid;});
+          annLastSeen=maxId;
+          localStorage.setItem('laapoa_ann_seen',String(maxId));
+        }
+      });
+      setState({tab:'announce'});
+    });
     if(tb)tb.addEventListener('click',function(){setState({tab:'bulletin'});});
   }
 
