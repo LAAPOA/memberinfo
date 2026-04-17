@@ -663,6 +663,9 @@ function render() {
         html+='<div class="ann-post"><div class="ann-meta">'+esc(p.timestamp||'')+(p.postedBy?' · '+esc(p.postedBy):'')+'</div><div class="ann-title">'+esc(p.title)+'</div><div class="ann-body">'+esc(p.body)+'</div></div>';
       });
       el.innerHTML=html;
+    }).catch(function(err){
+      var el=document.getElementById('annContent');
+      if(el)el.innerHTML='<div class="err">Failed to load announcements. Please try again.</div>';
     });
     return;
   }
@@ -722,6 +725,9 @@ function render() {
           });
         });
       });
+    }).catch(function(err){
+      var el=document.getElementById('bbContent');
+      if(el)el.innerHTML='<div class="err">Failed to load board. Please try again.</div>';
     });
     return;
   }
