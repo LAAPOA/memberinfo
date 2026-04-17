@@ -101,6 +101,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .bb-compose input,.bb-compose textarea{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;-webkit-appearance:none}
 .bb-compose input:focus,.bb-compose textarea:focus{border-color:var(--gold)}
 .bb-compose textarea{resize:vertical;min-height:80px}
+.bb-rte-toolbar{display:flex;flex-wrap:wrap;gap:2px;padding:6px;background:var(--navy);border:1px solid var(--border);border-bottom:none;border-radius:var(--radius) var(--radius) 0 0}
+.bb-rte-toolbar button{background:none;border:1px solid transparent;border-radius:4px;color:var(--text-dim);cursor:pointer;padding:4px 7px;font-size:12px;font-family:inherit;line-height:1;min-width:28px;text-align:center}
+.bb-rte-toolbar button:hover{background:var(--surface-raised);color:var(--text);border-color:var(--border)}
+.bb-rte-toolbar button.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold)}
+.bb-rte-toolbar select{background:var(--navy);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);cursor:pointer;padding:3px 4px;font-size:11px;font-family:inherit}
+.bb-rte-body{background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--radius) var(--radius);padding:12px;color:var(--text);font-size:14px;font-family:inherit;min-height:100px;max-height:250px;overflow-y:auto;outline:none;line-height:1.6}
+.bb-rte-body:focus{border-color:var(--gold)}
+.bb-rte-body a{color:var(--gold-light);text-decoration:underline}
+.bb-rte-body h2{font-size:18px;margin:8px 0 4px}
+.bb-rte-body h3{font-size:16px;margin:6px 0 4px}
+.bb-rte-body ul,.bb-rte-body ol{padding-left:20px;margin:4px 0}
+.bb-rte-body blockquote{border-left:3px solid var(--gold);padding-left:12px;margin:4px 0;color:var(--text-dim)}
+.bb-rte-body:empty:before{content:attr(data-placeholder);color:var(--text-muted);pointer-events:none}
 .ann-post{background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
 .ann-meta{font-size:11px;color:var(--text-muted);margin-bottom:6px}
 .ann-title{font-size:15px;font-weight:600;margin-bottom:6px;color:var(--gold)}
@@ -685,8 +698,23 @@ function render() {
         '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button id="bbToggle" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--text);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> New Post</button></div>' +
         '<div class="bb-compose" id="bbCompose" style="display:none">' +
           '<input id="bbTitle" type="text" placeholder="Post title" maxlength="200">' +
-          '<textarea id="bbBody" placeholder="Write your message..." maxlength="2000"></textarea>' +
-          '<div style="display:flex;gap:8px"><button class="btn btn-gold" id="bbPost" style="flex:1">Post</button><button class="btn btn-outline" id="bbCancel" style="flex:0;min-width:80px">Cancel</button></div>' +
+          '<div class="bb-rte-toolbar" id="bbToolbar">' +
+            '<button data-cmd="bold" title="Bold"><strong>B</strong></button>' +
+            '<button data-cmd="italic" title="Italic"><em>I</em></button>' +
+            '<button data-cmd="underline" title="Underline"><u>U</u></button>' +
+            '<button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>' +
+            '<span style="width:1px;background:var(--border);margin:2px 4px"></span>' +
+            '<button data-cmd="insertUnorderedList" title="Bullet list">\u2022</button>' +
+            '<button data-cmd="insertOrderedList" title="Numbered list">1.</button>' +
+            '<button data-cmd="formatBlock" data-val="BLOCKQUOTE" title="Quote">\u201c</button>' +
+            '<span style="width:1px;background:var(--border);margin:2px 4px"></span>' +
+            '<select id="bbHeading"><option value="">Normal</option><option value="H2">Heading</option><option value="H3">Subheading</option></select>' +
+            '<select id="bbColor"><option value="">Color</option><option value="#E8E8EC">White</option><option value="#C6973F">Gold</option><option value="#C0392B">Red</option><option value="#27AE60">Green</option><option value="#3498DB">Blue</option><option value="#E67E22">Orange</option><option value="#9B59B6">Purple</option></select>' +
+            '<button id="bbLinkBtn" title="Insert link">\ud83d\udd17</button>' +
+            '<button data-cmd="removeFormat" title="Clear formatting">\u2715</button>' +
+          '</div>' +
+          '<div class="bb-rte-body" id="bbBody" contenteditable="true" data-placeholder="Write your message..."></div>' +
+          '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-gold" id="bbPost" style="flex:1">Post</button><button class="btn btn-outline" id="bbCancel" style="flex:0;min-width:80px">Cancel</button></div>' +
         '</div>' +
         '<div id="bbContent">'+bbHtml+'</div>' +
       '</div>' +
@@ -700,15 +728,44 @@ function render() {
     document.getElementById('bbCancel').addEventListener('click', function(){
       document.getElementById('bbCompose').style.display='none';
       document.getElementById('bbTitle').value='';
-      document.getElementById('bbBody').value='';
+      document.getElementById('bbBody').innerHTML='';
       var postBtn=document.getElementById('bbPost');
       postBtn.textContent='Post';
       postBtn._editId=null;
     });
+    // Rich text editor toolbar wiring
+    document.querySelectorAll('#bbToolbar button[data-cmd]').forEach(function(btn){
+      btn.addEventListener('mousedown',function(ev){ev.preventDefault();});
+      btn.addEventListener('click',function(){
+        var cmd=btn.getAttribute('data-cmd');
+        var val=btn.getAttribute('data-val')||null;
+        if(cmd==='formatBlock'&&val){document.execCommand(cmd,false,'<'+val+'>');}
+        else{document.execCommand(cmd,false,val);}
+        document.getElementById('bbBody').focus();
+      });
+    });
+    document.getElementById('bbHeading').addEventListener('change',function(){
+      var v=this.value;
+      if(v){document.execCommand('formatBlock',false,'<'+v+'>');}
+      else{document.execCommand('formatBlock',false,'<P>');}
+      this.value=v;
+      document.getElementById('bbBody').focus();
+    });
+    document.getElementById('bbColor').addEventListener('change',function(){
+      if(this.value){document.execCommand('foreColor',false,this.value);}
+      this.selectedIndex=0;
+      document.getElementById('bbBody').focus();
+    });
+    document.getElementById('bbLinkBtn').addEventListener('mousedown',function(ev){ev.preventDefault();});
+    document.getElementById('bbLinkBtn').addEventListener('click',function(){
+      var url=prompt('Enter URL:','https://');
+      if(url){document.execCommand('createLink',false,url);}
+      document.getElementById('bbBody').focus();
+    });
     document.getElementById('bbPost').addEventListener('click', function(){
       var title=document.getElementById('bbTitle').value.trim();
-      var body=document.getElementById('bbBody').value.trim();
-      if(!title||!body){return;}
+      var body=document.getElementById('bbBody').innerHTML.trim();
+      if(!title||!body||body==='<br>'){return;}
       var btn=document.getElementById('bbPost');
       var editId=btn._editId||null;
       btn.disabled=true;btn.textContent=editId?'Saving...':'Posting...';
@@ -733,19 +790,21 @@ function render() {
       var html='';
       res.posts.forEach(function(p){
         var editInfo = '';
-        if (p.editedBySerial) editInfo = '<div style="font-size:10px;color:var(--text-muted);margin-top:6px;font-style:italic">Edited by Serial \u2116 '+esc(String(p.editedBySerial))+' \u00b7 '+esc(String(p.editedTimestamp||''))+'</div>';
-        html+='<div class="bb-post"><div class="bb-meta"><span><span class="bb-serial">Serial \u2116 '+esc(String(p.authorSerial||'\u2014'))+'</span> \u00b7 '+esc(String(p.timestamp||''))+'</span><span style="display:flex;gap:6px"><button class="bb-edit" data-id="'+esc(String(p.id))+'" data-title="'+esc(String(p.title||''))+'" data-body="'+esc(String(p.body||''))+'">Edit</button><button class="bb-delete" data-id="'+esc(String(p.id))+'">Delete</button></span></div><div class="bb-title">'+esc(String(p.title||''))+'</div><div class="bb-body">'+esc(String(p.body||''))+'</div>'+editInfo+'</div>';
+        if (p.editedBySerial) editInfo = '<div style="font-size:10px;color:var(--text-muted);margin-top:6px;font-style:italic">Edited by '+esc(String(p.editedBySerial))+' \u00b7 '+esc(String(p.editedTimestamp||''))+'</div>';
+        html+='<div class="bb-post"><div class="bb-meta"><span><span class="bb-serial">Posted by '+esc(String(p.authorSerial||'\u2014'))+'</span> \u00b7 '+esc(String(p.timestamp||''))+'</span><span style="display:flex;gap:6px"><button class="bb-edit" data-id="'+esc(String(p.id))+'" data-title="'+esc(String(p.title||''))+'">Edit</button><button class="bb-delete" data-id="'+esc(String(p.id))+'">Delete</button></span></div><div class="bb-title">'+esc(String(p.title||''))+'</div><div class="bb-body bb-rte-body" style="border:none;padding:0;min-height:0">'+String(p.body||'')+'</div>'+editInfo+'</div>';
       });
       el.innerHTML=html;
       el.querySelectorAll('.bb-edit').forEach(function(btn){
         btn.addEventListener('click',function(){
           var id=btn.getAttribute('data-id');
           var t=btn.getAttribute('data-title');
-          var b=btn.getAttribute('data-body');
+          var postEl=btn.closest('.bb-post');
+          var bodyEl=postEl.querySelector('.bb-body');
+          var b=bodyEl?bodyEl.innerHTML:'';
           var compose=document.getElementById('bbCompose');
           compose.style.display='flex';
           document.getElementById('bbTitle').value=t;
-          document.getElementById('bbBody').value=b;
+          document.getElementById('bbBody').innerHTML=b;
           var postBtn=document.getElementById('bbPost');
           postBtn.textContent='Save Edit';
           postBtn._editId=id;
