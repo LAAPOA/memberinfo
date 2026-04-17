@@ -1099,6 +1099,8 @@ function startCelebration() {
   function animate() {
     ctx.clearRect(0,0,W,H);
     // Confetti
+    var fadeStart = 480; // start fading at frame 480 (last 2 seconds)
+    var confettiAlpha = frame < fadeStart ? 0.8 : 0.8 * (1 - (frame - fadeStart) / (600 - fadeStart));
     particles.forEach(function(p){
       p.x += p.vx; p.y += p.vy; p.rot += p.vr;
       if (p.y > H) { p.y = -10; p.x = Math.random()*W; }
@@ -1106,7 +1108,7 @@ function startCelebration() {
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rot*Math.PI/180);
       ctx.fillStyle = p.color;
-      ctx.globalAlpha = 0.8;
+      ctx.globalAlpha = confettiAlpha;
       ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
       ctx.restore();
     });
@@ -1123,7 +1125,7 @@ function startCelebration() {
     });
     ctx.globalAlpha = 1;
     fireworks = fireworks.filter(function(f){ return f.alpha > 0; });
-    if (frame % 90 === 0) spawnFirework();
+    if (frame % 90 === 0 && frame < 480) spawnFirework();
     frame++;
     if (frame < 600) animId = requestAnimationFrame(animate);
     else { ctx.clearRect(0,0,W,H); canvas.style.display='none'; }
