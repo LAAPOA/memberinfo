@@ -1,4 +1,4 @@
-const CACHE_NAME = 'laapoa-member-v1';
+const CACHE_NAME = 'laapoa-member-v2';
 const CACHE_URLS = [
   './',
   './index.html'
