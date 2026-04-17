@@ -96,6 +96,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .bb-title{font-size:15px;font-weight:600;margin-bottom:6px}
 .bb-body{font-size:13px;color:var(--text-dim);line-height:1.6;white-space:pre-wrap}
 .bb-delete{font-size:11px;color:var(--red);cursor:pointer;padding:4px 8px;border:1px solid var(--red);border-radius:6px;background:none;font-family:inherit}
+.bb-edit{font-size:11px;color:var(--gold);cursor:pointer;padding:4px 8px;border:1px solid var(--gold);border-radius:6px;background:none;font-family:inherit}
 .bb-compose{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;padding:16px;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius)}
 .bb-compose input,.bb-compose textarea{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;-webkit-appearance:none}
 .bb-compose input:focus,.bb-compose textarea:focus{border-color:var(--gold)}
@@ -527,12 +528,10 @@ function render() {
           '<div style="font-size:13px;color:var(--text-dim);line-height:1.6;max-width:320px;margin:0 auto">'+esc(ds.reason)+'</div>' +
           (ds.countdownMs>0?'<div id="countdown" style="margin-top:20px;font-family:\'JetBrains Mono\',monospace;font-size:36px;color:var(--gold);letter-spacing:2px"></div><div style="font-size:11px;color:var(--text-muted);margin-top:6px">until access is restored</div>':'') +
         '</div>' +
-        '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
 
     wireTabEvents();
-    document.getElementById('logoutBtn').addEventListener('click', clearSession);
 
     // Live countdown timer
     if (ds.countdownMs > 0) {
@@ -603,12 +602,10 @@ function render() {
         tabBar('directory') +
         '<div class="search-input"><input id="searchQ" type="text" placeholder="Search by name or serial #..." value="'+esc(searchQuery)+'"><button class="btn btn-gold" id="searchBtn" style="width:auto;min-width:80px;margin-left:8px">Search</button></div>' +
         resultsHtml +
-        '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
 
     wireTabEvents();
-    document.getElementById('logoutBtn').addEventListener('click', clearSession);
     const sq = document.getElementById('searchQ');
     sq.addEventListener('keydown', e=>{searchQuery=sq.value;if(e.key==='Enter')doSearch();});
     document.getElementById('searchBtn').addEventListener('click', ()=>{searchQuery=sq.value;doSearch();});
@@ -653,11 +650,9 @@ function render() {
         '</div>' +
         tabBar('announce') +
         '<div id="annContent">'+annHtml+'</div>' +
-        '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
     wireTabEvents();
-    document.getElementById('logoutBtn').addEventListener('click', clearSession);
     // Load announcements
     apiCall('getAnnouncements',{token:state.token}).then(function(res){
       var el=document.getElementById('annContent');
@@ -687,40 +682,76 @@ function render() {
           '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+'</div></div>' +
         '</div>' +
         tabBar('bulletin') +
-        '<div class="bb-compose" id="bbCompose">' +
+        '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button id="bbToggle" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--text);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> New Post</button></div>' +
+        '<div class="bb-compose" id="bbCompose" style="display:none">' +
           '<input id="bbTitle" type="text" placeholder="Post title" maxlength="200">' +
           '<textarea id="bbBody" placeholder="Write your message..." maxlength="2000"></textarea>' +
-          '<button class="btn btn-gold" id="bbPost">Post to Board</button>' +
+          '<div style="display:flex;gap:8px"><button class="btn btn-gold" id="bbPost" style="flex:1">Post</button><button class="btn btn-outline" id="bbCancel" style="flex:0;min-width:80px">Cancel</button></div>' +
         '</div>' +
         '<div id="bbContent">'+bbHtml+'</div>' +
-        '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
     wireTabEvents();
-    document.getElementById('logoutBtn').addEventListener('click', clearSession);
+    document.getElementById('bbToggle').addEventListener('click', function(){
+      var c=document.getElementById('bbCompose');
+      c.style.display=c.style.display==='none'?'flex':'none';
+      if(c.style.display==='flex')document.getElementById('bbTitle').focus();
+    });
+    document.getElementById('bbCancel').addEventListener('click', function(){
+      document.getElementById('bbCompose').style.display='none';
+      document.getElementById('bbTitle').value='';
+      document.getElementById('bbBody').value='';
+      var postBtn=document.getElementById('bbPost');
+      postBtn.textContent='Post';
+      postBtn._editId=null;
+    });
     document.getElementById('bbPost').addEventListener('click', function(){
       var title=document.getElementById('bbTitle').value.trim();
       var body=document.getElementById('bbBody').value.trim();
       if(!title||!body){return;}
       var btn=document.getElementById('bbPost');
-      btn.disabled=true;btn.textContent='Posting...';
-      apiCall('postBulletin',{token:state.token,title:title,body:body,mou:m.mou,authorName:m.name,authorSerial:m.serialNumber||'',authorCid:m.cid||''}).then(function(res){
-        if(res.ok){setState({tab:'bulletin'});}
-        else{btn.disabled=false;btn.textContent='Post to Board';}
-      });
+      var editId=btn._editId||null;
+      btn.disabled=true;btn.textContent=editId?'Saving...':'Posting...';
+      if(editId){
+        apiCall('editBulletin',{token:state.token,postId:editId,title:title,body:body,editorSerial:m.serialNumber||'',editorName:m.name}).then(function(res){
+          if(res.ok){btn._editId=null;setState({tab:'bulletin'});}
+          else{btn.disabled=false;btn.textContent='Save Edit';}
+        });
+      }else{
+        apiCall('postBulletin',{token:state.token,title:title,body:body,mou:m.mou,authorName:m.name,authorSerial:m.serialNumber||'',authorCid:m.cid||''}).then(function(res){
+          if(res.ok){setState({tab:'bulletin'});}
+          else{btn.disabled=false;btn.textContent='Post';}
+        });
+      }
     });
     // Load bulletin board
     apiCall('getBulletinBoard',{token:state.token,mou:m.mou}).then(function(res){
       var el=document.getElementById('bbContent');
       if(!el)return;
-      if(res.error){el.innerHTML='<div class="err">'+esc(res.error)+'</div>';return;}
+      if(res.error){el.innerHTML='<div class="err">Server: '+esc(res.error)+'</div>';return;}
       if(!res.posts||res.posts.length===0){el.innerHTML='<div class="search-empty">No posts yet. Be the first!</div>';return;}
       var html='';
       res.posts.forEach(function(p){
-        html+='<div class="bb-post"><div class="bb-meta"><span><span class="bb-serial">Serial \u2116 '+esc(p.authorSerial||'—')+'</span> · '+esc(p.timestamp||'')+'</span><button class="bb-delete" data-id="'+esc(p.id)+'">Delete</button></div><div class="bb-title">'+esc(p.title)+'</div><div class="bb-body">'+esc(p.body)+'</div></div>';
+        var editInfo = '';
+        if (p.editedBySerial) editInfo = '<div style="font-size:10px;color:var(--text-muted);margin-top:6px;font-style:italic">Edited by Serial \u2116 '+esc(String(p.editedBySerial))+' \u00b7 '+esc(p.editedTimestamp||'')+'</div>';
+        html+='<div class="bb-post"><div class="bb-meta"><span><span class="bb-serial">Serial \u2116 '+esc(p.authorSerial||'\u2014')+'</span> \u00b7 '+esc(p.timestamp||'')+'</span><span style="display:flex;gap:6px"><button class="bb-edit" data-id="'+esc(p.id)+'" data-title="'+esc(p.title)+'" data-body="'+esc(p.body)+'">Edit</button><button class="bb-delete" data-id="'+esc(p.id)+'">Delete</button></span></div><div class="bb-title">'+esc(p.title)+'</div><div class="bb-body">'+esc(p.body)+'</div>'+editInfo+'</div>';
       });
       el.innerHTML=html;
-      // Wire delete buttons
+      el.querySelectorAll('.bb-edit').forEach(function(btn){
+        btn.addEventListener('click',function(){
+          var id=btn.getAttribute('data-id');
+          var t=btn.getAttribute('data-title');
+          var b=btn.getAttribute('data-body');
+          var compose=document.getElementById('bbCompose');
+          compose.style.display='flex';
+          document.getElementById('bbTitle').value=t;
+          document.getElementById('bbBody').value=b;
+          var postBtn=document.getElementById('bbPost');
+          postBtn.textContent='Save Edit';
+          postBtn._editId=id;
+          compose.scrollIntoView({behavior:'smooth'});
+        });
+      });
       el.querySelectorAll('.bb-delete').forEach(function(btn){
         btn.addEventListener('click',function(){
           var id=btn.getAttribute('data-id');
@@ -731,9 +762,11 @@ function render() {
           });
         });
       });
+        });
+      });
     }).catch(function(err){
       var el=document.getElementById('bbContent');
-      if(el)el.innerHTML='<div class="err">Failed to load board. Please try again.</div>';
+      if(el)el.innerHTML='<div class="err">Error: '+esc(String(err))+'</div>';
     });
     return;
   }
@@ -955,9 +988,17 @@ function renderExpandedCard() {
 
 render();
 
-// Register service worker for PWA
+// Force update service worker and clear old caches
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(function(){});
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    registrations.forEach(function(r) { r.unregister(); });
+  });
+  caches.keys().then(function(names) {
+    names.forEach(function(name) { caches.delete(name); });
+  });
+  setTimeout(function() {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }, 1000);
 }
 </script>
 </body>
