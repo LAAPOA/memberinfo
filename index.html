@@ -1126,6 +1126,7 @@ function startCelebration() {
     if (frame % 90 === 0) spawnFirework();
     frame++;
     if (frame < 600) animId = requestAnimationFrame(animate);
+    else { ctx.clearRect(0,0,W,H); canvas.style.display='none'; }
   }
   spawnFirework();
   animate();
