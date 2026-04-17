@@ -530,7 +530,7 @@ function render() {
         '<div class="info-row"><span class="info-label">Retirement</span><span class="info-val">'+esc(m.retirement||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">CID</span><span class="info-val" style="font-family:\'JetBrains Mono\',monospace">'+esc(m.cid||'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">Status</span><span class="info-val">'+esc(m.memberStatus||'—')+'</span></div>' +
-        '<div class="info-row"><span class="info-label">Birthday</span><span class="info-val">'+esc(m.dob?m.dob.replace(/(\d{4})-(\d{2})-(\d{2})/,'$2-$3-$1'):'—')+'</span></div>' +
+        '<div class="info-row"><span class="info-label">Birthday</span><span class="info-val">'+esc(m.dob?m.dob.replace(/(\d{4})-(\d{2})-(\d{2})/,'$2-$3-$1'):'—')+(m.birthdayOptOut==='true'?' <span style="font-size:11px;color:var(--text-muted);font-style:italic">(hidden from celebration)</span>':'')+'</span></div>' +
         '<div class="section-title">Contact</div>' +
         '<div class="info-row"><span class="info-label">Mobile Phone</span><span class="info-val">'+(m.phone?'<a href="tel:'+esc(m.phone)+'">'+esc(fmtPhone(m.phone))+'</a>':'—')+'</span></div>' +
         '<div class="info-row"><span class="info-label">City Cell</span><span class="info-val">'+(m.cityCell?'<a href="tel:'+esc(m.cityCell)+'">'+esc(fmtPhone(m.cityCell))+'</a>':'<span style="color:var(--text-muted)">Not provided</span>')+'</span></div>' +
