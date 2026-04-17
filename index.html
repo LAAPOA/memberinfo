@@ -122,6 +122,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .ann-body h2{font-size:18px;margin:8px 0 4px;color:var(--text)}
 .ann-body h3{font-size:16px;margin:6px 0 4px;color:var(--text)}
 .ann-body ul,.ann-body ol{padding-left:20px;margin:4px 0}
+.bday-section{background:linear-gradient(135deg,#1a1040,#0F1F38);border:1px solid rgba(198,151,63,.3);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;position:relative;overflow:hidden;text-align:center}
+.bday-title{font-size:20px;font-weight:700;color:var(--gold);margin-bottom:4px;position:relative;z-index:1}
+.bday-subtitle{font-size:12px;color:var(--text-dim);margin-bottom:14px;position:relative;z-index:1}
+.bday-name{font-size:16px;font-weight:600;color:var(--text);margin:8px 0;position:relative;z-index:1}
+.bday-canvas{position:absolute;inset:0;pointer-events:none;z-index:0}
 .bb-tab-label{display:inline}
 .sr-card{cursor:pointer}
 .sr-card:active{background:var(--surface-raised)}
@@ -666,10 +671,35 @@ function render() {
           '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+'</div></div>' +
         '</div>' +
         tabBar('announce') +
+        '<div id="bdaySection"></div>' +
         '<div id="annContent">'+annHtml+'</div>' +
       '</div>' +
       '<div class="footer">LAAPOA Member Info</div>';
     wireTabEvents();
+
+    // Check if we're in celebration window (0430-1030)
+    var nowH = new Date().getHours();
+    var nowM = new Date().getMinutes();
+    var nowTime = nowH * 100 + nowM;
+    if (nowTime >= 430 && nowTime <= 1030) {
+      apiCall('getBirthdays',{token:state.token}).then(function(res){
+        var bdayEl = document.getElementById('bdaySection');
+        if (!bdayEl || !res.ok || !res.birthdays || res.birthdays.length === 0) return;
+        var namesHtml = '';
+        res.birthdays.forEach(function(b){
+          namesHtml += '<div class="bday-name">\ud83c\udf82 ' + esc(String(b.rank)) + ' ' + esc(String(b.name)) + '</div>';
+        });
+        bdayEl.innerHTML =
+          '<div class="bday-section">' +
+            '<canvas class="bday-canvas" id="bdayCanvas"></canvas>' +
+            '<div class="bday-title">\ud83c\udf89 Happy Birthday! \ud83c\udf89</div>' +
+            '<div class="bday-subtitle">Celebrating our members today</div>' +
+            namesHtml +
+          '</div>';
+        startCelebration();
+      });
+    }
+
     // Load announcements
     apiCall('getAnnouncements',{token:state.token}).then(function(res){
       var el=document.getElementById('annContent');
@@ -974,6 +1004,84 @@ function render() {
   ueEl.addEventListener('input', checkEmail);
   ueEl.addEventListener('blur', checkEmail);
   checkEmail();
+}
+
+function startCelebration() {
+  var canvas = document.getElementById('bdayCanvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var parent = canvas.parentElement;
+  canvas.width = parent.offsetWidth;
+  canvas.height = parent.offsetHeight;
+  var W = canvas.width, H = canvas.height;
+  var particles = [];
+  var fireworks = [];
+  var colors = ['#C6973F','#D4AD5E','#E8E8EC','#C0392B','#27AE60','#3498DB','#E67E22','#9B59B6','#F39C12','#1ABC9C'];
+
+  function randColor() { return colors[Math.floor(Math.random()*colors.length)]; }
+
+  // Spawn confetti
+  for (var i = 0; i < 60; i++) {
+    particles.push({
+      x: Math.random()*W, y: Math.random()*H - H,
+      w: Math.random()*6+3, h: Math.random()*4+2,
+      vx: (Math.random()-0.5)*2, vy: Math.random()*2+1,
+      rot: Math.random()*360, vr: (Math.random()-0.5)*8,
+      color: randColor(), alpha: 1
+    });
+  }
+
+  // Firework particles
+  function spawnFirework() {
+    var fx = Math.random()*W*0.6+W*0.2;
+    var fy = Math.random()*H*0.4+H*0.1;
+    var c = randColor();
+    for (var j = 0; j < 20; j++) {
+      var angle = (Math.PI*2/20)*j;
+      var speed = Math.random()*2+1;
+      fireworks.push({
+        x: fx, y: fy,
+        vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+        color: c, alpha: 1, life: 60+Math.random()*30, age: 0, r: Math.random()*2+1
+      });
+    }
+  }
+
+  var frame = 0;
+  var animId;
+  function animate() {
+    ctx.clearRect(0,0,W,H);
+    // Confetti
+    particles.forEach(function(p){
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      if (p.y > H) { p.y = -10; p.x = Math.random()*W; }
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = 0.8;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    // Fireworks
+    fireworks.forEach(function(f){
+      f.x += f.vx; f.y += f.vy; f.vy += 0.03; f.age++;
+      f.alpha = Math.max(0, 1 - f.age/f.life);
+      if (f.alpha <= 0) return;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
+      ctx.fillStyle = f.color;
+      ctx.globalAlpha = f.alpha;
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    fireworks = fireworks.filter(function(f){ return f.alpha > 0; });
+    if (frame % 90 === 0) spawnFirework();
+    frame++;
+    if (frame < 600) animId = requestAnimationFrame(animate);
+  }
+  spawnFirework();
+  animate();
 }
 
 function filterBBPosts(q) {
