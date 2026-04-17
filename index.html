@@ -99,6 +99,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .bb-body{font-size:13px;color:var(--text-dim);line-height:1.6;white-space:pre-wrap}
 .bb-delete{font-size:11px;color:var(--red);cursor:pointer;padding:4px 8px;border:1px solid var(--red);border-radius:6px;background:none;font-family:inherit}
 .bb-edit{font-size:11px;color:var(--gold);cursor:pointer;padding:4px 8px;border:1px solid var(--gold);border-radius:6px;background:none;font-family:inherit}
+.bb-dots{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;padding:4px 8px;line-height:1;position:absolute;top:8px;right:8px}
+.bb-menu{position:absolute;top:32px;right:8px;background:var(--surface-raised);border:1px solid var(--border-bright);border-radius:8px;padding:4px;z-index:10;display:flex;flex-direction:column;gap:2px;min-width:100px;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.bb-menu button{background:none;border:none;color:var(--text);font-size:13px;padding:8px 12px;text-align:left;cursor:pointer;font-family:inherit;border-radius:4px}
+.bb-menu button:hover{background:var(--gold-dim)}
+.bb-menu .bb-menu-del{color:var(--red)}
+.bb-menu .bb-menu-del:hover{background:var(--red-dim)}
+.bb-deleted{background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;opacity:.5}
+.bb-deleted-title{font-size:13px;color:var(--text-muted);text-decoration:line-through}
+.bb-deleted-info{font-size:11px;color:var(--red);margin-top:4px}
+.slide-confirm{position:relative;height:44px;background:var(--red-dim);border-radius:8px;overflow:hidden;margin-top:10px;touch-action:none}
+.slide-track{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--red);pointer-events:none}
+.slide-thumb{position:absolute;left:0;top:0;height:100%;width:50px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none}
+.slide-thumb svg{width:20px;height:20px}
+.slide-done{text-align:center;font-size:12px;color:var(--red);padding:10px}
 .bb-compose{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;padding:16px;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius)}
 .bb-compose input,.bb-compose textarea{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;-webkit-appearance:none}
 .bb-compose input:focus,.bb-compose textarea:focus{border-color:var(--gold)}
@@ -895,18 +909,43 @@ function render() {
       if(!res.posts||res.posts.length===0){el.innerHTML='<div class="search-empty">No posts yet. Be the first!</div>';return;}
       var html='';
       res.posts.forEach(function(p){
+        if (p.isDeleted) {
+          html+='<div class="bb-deleted"><div class="bb-deleted-title">'+esc(String(p.title||''))+'</div><div class="bb-deleted-info">Deleted by '+esc(String(p.deletedBySerial||''))+' \u00b7 '+esc(String(p.deletedTimestamp||''))+'</div></div>';
+          return;
+        }
         var editInfo = '';
         if (p.editedBySerial) editInfo = '<div style="font-size:10px;color:var(--text-muted);margin-top:6px;font-style:italic">Edited by '+esc(String(p.editedBySerial))+' \u00b7 '+esc(String(p.editedTimestamp||''))+'</div>';
-        html+='<div class="bb-post"><div class="bb-meta"><span><span class="bb-serial">Posted by '+esc(String(p.authorSerial||'\u2014'))+'</span> \u00b7 '+esc(String(p.timestamp||''))+'</span><span style="display:flex;gap:6px"><button class="bb-edit" data-id="'+esc(String(p.id))+'" data-title="'+esc(String(p.title||''))+'">Edit</button><button class="bb-delete" data-id="'+esc(String(p.id))+'">Delete</button></span></div><div class="bb-title">'+esc(String(p.title||''))+'</div><div class="bb-body bb-rte-body" style="border:none;padding:0;min-height:0">'+String(p.body||'')+'</div>'+editInfo+'</div>';
+        html+='<div class="bb-post" style="position:relative" data-postid="'+esc(String(p.id))+'"><button class="bb-dots" data-dotid="'+esc(String(p.id))+'">\u22ee</button><div class="bb-meta"><span><span class="bb-serial">Posted by '+esc(String(p.authorSerial||'\u2014'))+'</span> \u00b7 '+esc(String(p.timestamp||''))+'</span></div><div class="bb-title">'+esc(String(p.title||''))+'</div><div class="bb-body bb-rte-body" style="border:none;padding:0;min-height:0">'+String(p.body||'')+'</div>'+editInfo+'<div class="bb-menu" data-menuid="'+esc(String(p.id))+'" style="display:none"><button class="bb-menu-edit" data-id="'+esc(String(p.id))+'" data-title="'+esc(String(p.title||''))+'">Edit</button><button class="bb-menu-del" data-id="'+esc(String(p.id))+'">Delete</button></div><div class="bb-slide-area" data-slideid="'+esc(String(p.id))+'" style="display:none"></div></div>';
       });
       el.innerHTML=html;
-      el.querySelectorAll('.bb-edit').forEach(function(btn){
+
+      // Close menus when tapping elsewhere
+      document.addEventListener('click',function(ev){
+        if(!ev.target.closest('.bb-dots')&&!ev.target.closest('.bb-menu')){
+          el.querySelectorAll('.bb-menu').forEach(function(m){m.style.display='none';});
+        }
+      });
+
+      // Wire three-dot buttons
+      el.querySelectorAll('.bb-dots').forEach(function(btn){
+        btn.addEventListener('click',function(ev){
+          ev.stopPropagation();
+          var id=btn.getAttribute('data-dotid');
+          el.querySelectorAll('.bb-menu').forEach(function(m){m.style.display='none';});
+          var menu=el.querySelector('.bb-menu[data-menuid="'+id+'"]');
+          if(menu)menu.style.display=menu.style.display==='none'?'flex':'none';
+        });
+      });
+
+      // Wire edit from menu
+      el.querySelectorAll('.bb-menu-edit').forEach(function(btn){
         btn.addEventListener('click',function(){
           var id=btn.getAttribute('data-id');
           var t=btn.getAttribute('data-title');
           var postEl=btn.closest('.bb-post');
           var bodyEl=postEl.querySelector('.bb-body');
           var b=bodyEl?bodyEl.innerHTML:'';
+          el.querySelectorAll('.bb-menu').forEach(function(m){m.style.display='none';});
           var compose=document.getElementById('bbCompose');
           compose.style.display='flex';
           document.getElementById('bbTitle').value=t;
@@ -917,14 +956,48 @@ function render() {
           compose.scrollIntoView({behavior:'smooth'});
         });
       });
-      el.querySelectorAll('.bb-delete').forEach(function(btn){
+
+      // Wire delete from menu — show slide to confirm
+      el.querySelectorAll('.bb-menu-del').forEach(function(btn){
         btn.addEventListener('click',function(){
           var id=btn.getAttribute('data-id');
-          if(!confirm('Delete this post?'))return;
-          btn.textContent='Deleting...';btn.disabled=true;
-          apiCall('deleteBulletin',{token:state.token,postId:id,authorName:m.name}).then(function(res){
-            if(res.ok)setState({tab:'bulletin'});
-          });
+          el.querySelectorAll('.bb-menu').forEach(function(m){m.style.display='none';});
+          var slideArea=el.querySelector('.bb-slide-area[data-slideid="'+id+'"]');
+          if(!slideArea)return;
+          slideArea.style.display='block';
+          slideArea.innerHTML='<div class="slide-confirm" id="slideConfirm_'+id+'"><div class="slide-track">Slide to delete \u2192</div><div class="slide-thumb" id="slideThumb_'+id+'"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div></div>';
+
+          var thumb=document.getElementById('slideThumb_'+id);
+          var track=document.getElementById('slideConfirm_'+id);
+          var startX=0,currentX=0,dragging=false;
+          var maxSlide=track.offsetWidth-thumb.offsetWidth;
+
+          function onStart(ex){dragging=true;startX=ex;thumb.style.transition='none';}
+          function onMove(ex){
+            if(!dragging)return;
+            currentX=Math.max(0,Math.min(ex-startX,maxSlide));
+            thumb.style.left=currentX+'px';
+          }
+          function onEnd(){
+            if(!dragging)return;
+            dragging=false;
+            if(currentX>=maxSlide*0.8){
+              thumb.style.transition='left .2s';thumb.style.left=maxSlide+'px';
+              slideArea.innerHTML='<div class="slide-done">Deleting...</div>';
+              apiCall('deleteBulletin',{token:state.token,postId:id,deleterSerial:m.serialNumber||'',deleterName:m.name}).then(function(res){
+                if(res.ok)setState({tab:'bulletin'});
+              });
+            }else{
+              thumb.style.transition='left .2s';thumb.style.left='0px';currentX=0;
+            }
+          }
+
+          thumb.addEventListener('mousedown',function(e){e.preventDefault();onStart(e.clientX);});
+          document.addEventListener('mousemove',function(e){onMove(e.clientX);});
+          document.addEventListener('mouseup',onEnd);
+          thumb.addEventListener('touchstart',function(e){onStart(e.touches[0].clientX);},{passive:true});
+          document.addEventListener('touchmove',function(e){onMove(e.touches[0].clientX);},{passive:true});
+          document.addEventListener('touchend',onEnd);
         });
       });
     }).catch(function(err){
