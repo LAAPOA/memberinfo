@@ -189,7 +189,7 @@ const ASSIGN_39 = [{group:'LAX PSS',items:['PSS Watch 1','PSS Watch 2','PSS Watc
 const ASSIGN_28 = [{group:'Municipal Police',items:['Daily Posts',"Mayor's Post",'MLO-CRO','MLO-Sgt Arms']}];
 const ASSIGN_65 = [{group:'Ranger Duties',items:['Griffith / Metro RGN','Valley RGN','Observatory','H.R.S.T.','Harbor RGN']}];
 
-let state = {view:'login',member:null,token:null,row:null,loading:false,error:'',success:'',tab:'info'};
+let state = {view:'login',member:null,token:null,row:null,loading:false,error:'',success:'',tab:'announce'};
 
 // Restore session
 try {
@@ -208,7 +208,7 @@ function setState(updates) {
 
 function clearSession() {
   try { localStorage.removeItem('laapoa_member_session'); } catch(e) {}
-  state = {view:'login',member:null,token:null,row:null,loading:false,error:'',success:'',tab:'info'};
+  state = {view:'login',member:null,token:null,row:null,loading:false,error:'',success:'',tab:'announce'};
   render();
 }
 
@@ -260,7 +260,7 @@ async function handleLogin(e) {
   setState({loading:true, error:''});
   const res = await apiCall('login', {lastName, cid, dob});
   if (res.error) { setState({loading:false, error:res.error}); return; }
-  setState({view:'info', member:res.member, token:res.token, row:res.row, loading:false, error:'', tab:'info'});
+  setState({view:'info', member:res.member, token:res.token, row:res.row, loading:false, error:'', tab:'announce'});
   checkTokenExpiry();
   // Check announcement count for badge
   apiCall('getAnnouncements',{token:res.token}).then(function(r){
@@ -786,7 +786,7 @@ function render() {
         var embedUrl = videoUrl;
         var ytMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/live\/)([^&\s?]+)/);
         if (ytMatch) embedUrl = 'https://www.youtube.com/embed/' + ytMatch[1] + '?autoplay=0&rel=0';
-        videoHtml = '<div id="videoContainer" style="background:var(--navy);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px;position:relative"><div style="position:relative;padding-bottom:56.25%;height:0"><iframe id="videoFrame" src="'+esc(embedUrl)+'" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;fullscreen" allowfullscreen></iframe></div><button id="videoFullBtn" style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);border:none;color:white;padding:6px 10px;border-radius:6px;font-size:11px;cursor:pointer;z-index:2">Full Screen</button></div>';
+        videoHtml = '<div style="background:var(--navy);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px"><div style="position:relative;padding-bottom:56.25%;height:0"><iframe src="'+esc(embedUrl)+'" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div></div>';
       }
 
       // Insert special items at configured positions (higher index first)
@@ -801,39 +801,6 @@ function render() {
 
       el.innerHTML = allItems.join('');
       if (bdayHtml) startCelebration();
-
-      // Video fullscreen + landscape
-      var fullBtn = document.getElementById('videoFullBtn');
-      var videoContainer = document.getElementById('videoContainer');
-      if (fullBtn && videoContainer) {
-        fullBtn.addEventListener('click', function(){
-          var iframe = document.getElementById('videoFrame');
-          if (iframe) {
-            if (iframe.requestFullscreen) iframe.requestFullscreen();
-            else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
-            else if (iframe.webkitEnterFullscreen) iframe.webkitEnterFullscreen();
-          }
-          // Try to lock to landscape
-          if (screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock('landscape').catch(function(){});
-          }
-        });
-        // Unlock orientation when exiting fullscreen
-        document.addEventListener('fullscreenchange', function(){
-          if (!document.fullscreenElement) {
-            if (screen.orientation && screen.orientation.unlock) {
-              screen.orientation.unlock();
-            }
-          }
-        });
-        document.addEventListener('webkitfullscreenchange', function(){
-          if (!document.webkitFullscreenElement) {
-            if (screen.orientation && screen.orientation.unlock) {
-              screen.orientation.unlock();
-            }
-          }
-        });
-      }
     }).catch(function(err){
       var el=document.getElementById('annContent');
       if(el)el.innerHTML='<div class="err">Failed to load announcements. Please try again.</div>';
