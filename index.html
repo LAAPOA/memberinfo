@@ -260,20 +260,23 @@ async function handleLogin(e) {
   setState({loading:true, error:''});
   const res = await apiCall('login', {lastName, cid, dob});
   if (res.error) { setState({loading:false, error:res.error}); return; }
+  // Store bundled data from login
+  state._announcements = res.announcements || null;
+  state._birthdays = res.birthdays || null;
+
   setState({view:'info', member:res.member, token:res.token, row:res.row, loading:false, error:'', tab:'announce'});
   checkTokenExpiry();
-  // Check announcement count for badge
-  apiCall('getAnnouncements',{token:res.token}).then(function(r){
-    if(r.ok&&r.posts){
-      var newCount=0;
-      r.posts.forEach(function(p){
-        var pid=parseInt(String(p.id));
-        if(pid>annLastSeen)newCount++;
-      });
-      annBadgeCount=newCount;
-      render();
-    }
-  });
+  // Check announcement count for badge using bundled data
+  var annData = res.announcements;
+  if(annData&&annData.ok&&annData.posts){
+    var newCount=0;
+    annData.posts.forEach(function(p){
+      var pid=parseInt(String(p.id));
+      if(pid>annLastSeen)newCount++;
+    });
+    annBadgeCount=newCount;
+    render();
+  }
 }
 
 async function handleUpdate(e) {
@@ -737,8 +740,24 @@ function render() {
     var nowTime = nowH * 100 + nowM;
     var showBday = (nowTime >= 430 && nowTime <= 1430);
 
-    var bdayPromise = showBday ? apiCall('getBirthdays',{token:state.token}) : Promise.resolve({ok:true,birthdays:[]});
-    var annPromise = apiCall('getAnnouncements',{token:state.token});
+    // Use bundled data from login if available, otherwise fetch
+    var bdayPromise;
+    if (showBday && state._birthdays) {
+      bdayPromise = Promise.resolve({ok:true,birthdays:state._birthdays});
+    } else if (showBday) {
+      bdayPromise = apiCall('getBirthdays',{token:state.token});
+    } else {
+      bdayPromise = Promise.resolve({ok:true,birthdays:[]});
+    }
+
+    var annPromise;
+    if (state._announcements) {
+      annPromise = Promise.resolve(state._announcements);
+      state._announcements = null; // Use once, then fetch fresh next time
+      state._birthdays = null;
+    } else {
+      annPromise = apiCall('getAnnouncements',{token:state.token});
+    }
 
     Promise.all([bdayPromise, annPromise]).then(function(results){
       var bdayRes = results[0];
