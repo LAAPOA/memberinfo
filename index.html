@@ -766,21 +766,38 @@ function render() {
 
       var posts = annRes.posts || [];
       var bdayPos = annRes.birthdayPosition !== undefined ? Number(annRes.birthdayPosition) : 0;
+      var videoPos = annRes.videoPosition !== undefined ? Number(annRes.videoPosition) : -1;
+      var videoUrl = annRes.videoUrl || '';
+      var videoEnabled = annRes.videoEnabled || false;
 
-      if (posts.length === 0 && !bdayHtml) {
+      if (posts.length === 0 && !bdayHtml && !videoEnabled) {
         el.innerHTML = '<div class="search-empty">No announcements yet</div>';
         return;
       }
 
-      // Build ordered output with birthday at the correct position
+      // Build ordered output with birthday and video at configured positions
       var allItems = posts.map(function(p){
         return '<div class="ann-post"><div class="ann-meta">'+esc(String(p.timestamp||''))+(p.postedBy?' \u00b7 '+esc(String(p.postedBy)):'')+'</div><div class="ann-title">'+esc(String(p.title||''))+'</div><div class="ann-body">'+String(p.body||'')+'</div></div>';
       });
 
-      if (bdayHtml) {
-        if (bdayPos >= 0 && bdayPos <= allItems.length) allItems.splice(bdayPos, 0, bdayHtml);
-        else allItems.unshift(bdayHtml);
+      // Build video embed HTML
+      var videoHtml = '';
+      if (videoEnabled && videoUrl) {
+        var embedUrl = videoUrl;
+        var ytMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/live\/)([^&\s?]+)/);
+        if (ytMatch) embedUrl = 'https://www.youtube.com/embed/' + ytMatch[1] + '?autoplay=0&rel=0';
+        videoHtml = '<div style="background:var(--navy);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px"><div style="position:relative;padding-bottom:56.25%;height:0"><iframe src="'+esc(embedUrl)+'" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div></div>';
       }
+
+      // Insert special items at configured positions (higher index first)
+      var inserts = [];
+      if (bdayHtml) inserts.push({pos:bdayPos, html:bdayHtml});
+      if (videoHtml) inserts.push({pos:videoPos>=0?videoPos:allItems.length, html:videoHtml});
+      inserts.sort(function(a,b){return b.pos-a.pos;});
+      inserts.forEach(function(ins){
+        if(ins.pos>=0&&ins.pos<=allItems.length) allItems.splice(ins.pos,0,ins.html);
+        else allItems.push(ins.html);
+      });
 
       el.innerHTML = allItems.join('');
       if (bdayHtml) startCelebration();
