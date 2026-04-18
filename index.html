@@ -113,6 +113,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .slide-thumb{position:absolute;left:0;top:0;height:100%;width:50px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none}
 .slide-thumb svg{width:20px;height:20px}
 .slide-done{text-align:center;font-size:12px;color:var(--red);padding:10px}
+.update-overlay{position:fixed;inset:0;background:rgba(11,26,51,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999}
+.update-text{font-size:16px;font-weight:600;color:var(--gold);margin-bottom:16px;letter-spacing:1px}
+.update-wave span{display:inline-block;width:8px;height:8px;margin:0 3px;border-radius:50%;background:var(--gold);animation:updateWave 1.2s ease-in-out infinite}
+.update-wave span:nth-child(2){animation-delay:.15s}
+.update-wave span:nth-child(3){animation-delay:.3s}
+.update-wave span:nth-child(4){animation-delay:.45s}
+@keyframes updateWave{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-10px);opacity:1}}
+.update-bar{width:200px;height:4px;background:rgba(198,151,63,.15);border-radius:2px;overflow:hidden;margin-top:16px}
+.update-bar-inner{width:60%;height:100%;background:var(--gold);border-radius:2px;animation:updateFill 2s ease-in-out infinite}
+@keyframes updateFill{0%{width:5%}50%{width:80%}100%{width:5%}}
 .bb-compose{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;padding:16px;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius)}
 .bb-compose input,.bb-compose textarea{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;-webkit-appearance:none}
 .bb-compose input:focus,.bb-compose textarea:focus{border-color:var(--gold)}
@@ -319,7 +329,18 @@ async function handleUpdate(e) {
     birthdayOptOut: state.member.birthdayOptOut || 'false',
   };
   setState({loading:true, error:'', success:''});
+  // Show updating overlay
+  var overlay = document.createElement('div');
+  overlay.className = 'update-overlay';
+  overlay.id = 'updateOverlay';
+  overlay.innerHTML = '<div class="update-text">UPDATING YOUR PROFILE</div><div class="update-wave"><span></span><span></span><span></span><span></span></div><div class="update-bar"><div class="update-bar-inner"></div></div>';
+  document.body.appendChild(overlay);
+
   const res = await apiCall('update', {token:state.token, row:state.row, updates});
+  // Remove overlay
+  var ov = document.getElementById('updateOverlay');
+  if (ov) ov.remove();
+
   if (res.error) {
     if (res.error.includes('expired') || res.error.includes('session')) { clearSession(); return; }
     setState({loading:false, error:res.error}); return;
