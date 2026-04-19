@@ -92,7 +92,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 @keyframes slwave{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-12px);opacity:1}}
 .tabs{display:flex;flex-wrap:wrap;gap:0;margin-bottom:16px}
 .tab{font-size:12px;padding:8px 10px;flex:1;min-width:0}
-.bb-post{background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
+.bb-post{background:var(--navy);border:1px solid var(--border-bright);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px}
 .bb-meta{font-size:11px;color:var(--text-muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
 .bb-serial{font-family:'JetBrains Mono',monospace}
 .bb-title{font-size:15px;font-weight:600;margin-bottom:6px}
@@ -140,7 +140,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .bb-rte-body ul,.bb-rte-body ol{padding-left:20px;margin:4px 0}
 .bb-rte-body blockquote{border-left:3px solid var(--gold);padding-left:12px;margin:4px 0;color:var(--text-dim)}
 .bb-rte-body:empty:before{content:attr(data-placeholder);color:var(--text-muted);pointer-events:none}
-.ann-post{background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
+.ann-post{background:var(--navy);border:1px solid var(--border-bright);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px}
 .ann-meta{font-size:11px;color:var(--text-muted);margin-bottom:6px}
 .ann-title{font-size:15px;font-weight:600;margin-bottom:6px;color:var(--gold)}
 .ann-body{font-size:13px;color:var(--text-dim);line-height:1.6}
@@ -521,6 +521,7 @@ function render() {
       '<button class="tab'+(active==='info'||active==='edit'?' on':'')+'" id="tabInfo">'+infoLabel+'</button>' +
       '<button class="tab'+(active==='directory'||active==='directory_blocked'?' on':'')+'" id="tabDir">Directory</button>' +
       '<button class="tab'+(active==='announce'?' on':'')+'" id="tabAnn">Announce'+(annBadgeCount>0&&active!=='announce'?'<span class="ann-badge">'+annBadgeCount+'</span>':'')+'</button>' +
+      '<span style="width:2px;background:var(--gold);opacity:.3;margin:6px 0;flex-shrink:0"></span>' +
       '<button class="tab'+(active==='events'?' on':'')+'" id="tabEvents">Events</button>' +
       '<button class="tab'+(active==='bulletin'?' on':'')+'" id="tabBB">'+bbLabel+'</button>' +
     '</div>';
