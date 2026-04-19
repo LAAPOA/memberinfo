@@ -521,6 +521,7 @@ function render() {
       '<button class="tab'+(active==='info'||active==='edit'?' on':'')+'" id="tabInfo">'+infoLabel+'</button>' +
       '<button class="tab'+(active==='directory'||active==='directory_blocked'?' on':'')+'" id="tabDir">Directory</button>' +
       '<button class="tab'+(active==='announce'?' on':'')+'" id="tabAnn">Announce'+(annBadgeCount>0&&active!=='announce'?'<span class="ann-badge">'+annBadgeCount+'</span>':'')+'</button>' +
+      '<button class="tab'+(active==='events'?' on':'')+'" id="tabEvents">Events</button>' +
       '<button class="tab'+(active==='bulletin'?' on':'')+'" id="tabBB">'+bbLabel+'</button>' +
     '</div>';
   }
@@ -529,6 +530,7 @@ function render() {
     var ti=document.getElementById('tabInfo');
     var td=document.getElementById('tabDir');
     var ta=document.getElementById('tabAnn');
+    var te=document.getElementById('tabEvents');
     var tb=document.getElementById('tabBB');
     if(ti)ti.addEventListener('click',function(){setState({tab:'info',error:'',success:''});});
     if(td)td.addEventListener('click',function(){
@@ -538,7 +540,6 @@ function render() {
     });
     if(ta)ta.addEventListener('click',function(){
       annBadgeCount=0;
-      // Save the latest announcement ID as seen
       apiCall('getAnnouncements',{token:state.token}).then(function(r){
         if(r.ok&&r.posts&&r.posts.length>0){
           var maxId=0;
@@ -549,6 +550,7 @@ function render() {
       });
       setState({tab:'announce'});
     });
+    if(te)te.addEventListener('click',function(){setState({tab:'events'});});
     if(tb)tb.addEventListener('click',function(){setState({tab:'bulletin'});});
   }
 
@@ -844,6 +846,69 @@ function render() {
     }).catch(function(err){
       var el=document.getElementById('annContent');
       if(el)el.innerHTML='<div class="err">Failed to load announcements. Please try again.</div>';
+    });
+    return;
+  }
+
+  // Events view
+  if (state.tab === 'events') {
+    app.innerHTML =
+      '<div class="card">' +
+        '<div class="member-header">' +
+          '<div class="avatar">'+initials+'</div>' +
+          '<div><div class="member-name">'+esc(m.name)+'</div>' +
+          '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' \u00b7 '+esc(m.mou):'')+'</div></div>' +
+        '</div>' +
+        tabBar('events') +
+        '<div id="eventsContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading events...</div></div>' +
+      '</div>' +
+      '<div class="footer">LAAPOA Member Info</div>';
+    wireTabEvents();
+
+    apiCall('getGiveaways',{token:state.token}).then(function(res){
+      var el=document.getElementById('eventsContent');
+      if(!el)return;
+      if(res.error){el.innerHTML='<div class="err">'+esc(res.error)+'</div>';return;}
+      var giveaways=res.giveaways||[];
+      if(giveaways.length===0){el.innerHTML='<div class="search-empty">No events right now. Check back soon!</div>';return;}
+      var html='';
+      var memberCid=m.cid||'';
+      giveaways.forEach(function(g){
+        var isEntered=false;
+        var entries=[];
+        try{entries=JSON.parse(g.entries||'[]');}catch(e){entries=[];}
+        for(var i=0;i<entries.length;i++){if(entries[i].cid===memberCid){isEntered=true;break;}}
+        var entryCount=entries.length;
+        var isClosed=g.status==='closed';
+        var winnerHtml='';
+        if(isClosed&&g.winnerName){
+          winnerHtml='<div style="text-align:center;padding:12px;background:rgba(198,151,63,.1);border-radius:8px;margin-top:10px"><div style="font-size:14px;color:var(--gold);font-weight:600">\ud83c\udfc6 Winner: '+esc(g.winnerName)+'</div></div>';
+        }
+        html+='<div class="ann-post">' +
+          '<div class="ann-title">'+esc(g.title||'')+'</div>' +
+          '<div class="ann-body" style="margin:8px 0">'+String(g.description||'')+'</div>' +
+          '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">'+entryCount+' '+(entryCount===1?'entry':'entries')+'</div>' +
+          winnerHtml +
+          (isClosed?'<div style="text-align:center;padding:8px;font-size:13px;color:var(--text-muted)">This giveaway has ended</div>':
+            (isEntered?'<div style="text-align:center;padding:10px;background:rgba(39,174,96,.1);border-radius:8px;font-size:14px;color:var(--green);font-weight:500">\u2705 You are entered!</div>':
+              '<button class="btn btn-gold gw-enter" data-gid="'+esc(String(g.id))+'" style="width:100%;padding:12px;font-size:15px;font-weight:600">Enter Me</button>')) +
+        '</div>';
+      });
+      el.innerHTML=html;
+
+      el.querySelectorAll('.gw-enter').forEach(function(btn){
+        btn.addEventListener('click',function(){
+          var gid=btn.getAttribute('data-gid');
+          btn.disabled=true;btn.textContent='Entering...';
+          apiCall('enterGiveaway',{token:state.token,giveawayId:gid,cid:m.cid,name:m.name,rank:m.rank,serialNumber:m.serialNumber}).then(function(res){
+            if(res.ok){setState({tab:'events'});}
+            else{btn.disabled=false;btn.textContent='Enter Me';}
+          });
+        });
+      });
+    }).catch(function(err){
+      var el=document.getElementById('eventsContent');
+      if(el)el.innerHTML='<div class="err">Failed to load events.</div>';
     });
     return;
   }
