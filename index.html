@@ -522,7 +522,7 @@ function render() {
       '<button class="tab'+(active==='directory'||active==='directory_blocked'?' on':'')+'" id="tabDir">Directory</button>' +
       '<button class="tab'+(active==='announce'?' on':'')+'" id="tabAnn">Announce'+(annBadgeCount>0&&active!=='announce'?'<span class="ann-badge">'+annBadgeCount+'</span>':'')+'</button>' +
       '<span style="width:2px;background:var(--gold);opacity:.3;margin:6px 0;flex-shrink:0"></span>' +
-      '<button class="tab'+(active==='events'?' on':'')+'" id="tabEvents">Events</button>' +
+      (state._eventsEnabled!==false?'<button class="tab'+(active==='events'?' on':'')+'" id="tabEvents">Events</button>':'') +
       '<button class="tab'+(active==='bulletin'?' on':'')+'" id="tabBB">'+bbLabel+'</button>' +
     '</div>';
   }
@@ -867,12 +867,14 @@ function render() {
     wireTabEvents();
 
     apiCall('getGiveaways',{token:state.token}).then(function(res){
+      state._eventsEnabled=res.eventsEnabled;
       var el=document.getElementById('eventsContent');
       if(!el)return;
       if(res.error){el.innerHTML='<div class="err">'+esc(res.error)+'</div>';return;}
       var giveaways=res.giveaways||[];
       if(giveaways.length===0){el.innerHTML='<div class="search-empty">No events right now. Check back soon!</div>';return;}
       var html='';
+      if(res.eventsEnabled===false){el.innerHTML='<div class="search-empty">No events right now. Check back soon!</div>';return;}
       var memberCid=m.cid||'';
       giveaways.forEach(function(g){
         var isEntered=false;
@@ -889,11 +891,13 @@ function render() {
           '<div class="ann-title">'+esc(g.title||'')+'</div>' +
           '<div class="ann-body" style="margin:8px 0">'+String(g.description||'')+'</div>' +
           '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">'+entryCount+' '+(entryCount===1?'entry':'entries')+'</div>' +
-          winnerHtml +
-          (isClosed?'<div style="text-align:center;padding:8px;font-size:13px;color:var(--text-muted)">This giveaway has ended</div>':
-            (isEntered?'<div style="text-align:center;padding:10px;background:rgba(39,174,96,.1);border-radius:8px;font-size:14px;color:var(--green);font-weight:500">\u2705 You are entered!</div>':
-              '<button class="btn btn-gold gw-enter" data-gid="'+esc(String(g.id))+'" style="width:100%;padding:12px;font-size:15px;font-weight:600">Enter Me</button>')) +
-        '</div>';
+          winnerHtml;
+        var isLocked=g.status==='locked';
+        if(isClosed) html+='<div style="text-align:center;padding:8px;font-size:13px;color:var(--text-muted)">This giveaway has ended</div>';
+        else if(isLocked) html+='<div style="text-align:center;padding:10px;background:rgba(192,57,43,.1);border-radius:8px;font-size:14px;color:var(--red);font-weight:500">Entries closed \u2014 drawing in progress</div>';
+        else if(isEntered) html+='<div style="text-align:center;padding:10px;background:rgba(39,174,96,.1);border-radius:8px;font-size:14px;color:var(--green);font-weight:500">\u2705 You are entered!</div>';
+        else html+='<button class="btn btn-gold gw-enter" data-gid="'+esc(String(g.id))+'" style="width:100%;padding:12px;font-size:15px;font-weight:600">Enter Me</button>';
+        html+='</div>';
       });
       el.innerHTML=html;
 
