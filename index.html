@@ -866,55 +866,118 @@ function render() {
       '<div class="footer">LAAPOA Member Info</div>';
     wireTabEvents();
 
-    apiCall('getGiveaways',{token:state.token}).then(function(res){
-      state._eventsEnabled=res.eventsEnabled;
-      var el=document.getElementById('eventsContent');
-      if(!el)return;
-      if(res.error){el.innerHTML='<div class="err">'+esc(res.error)+'</div>';return;}
-      var giveaways=res.giveaways||[];
-      if(giveaways.length===0){el.innerHTML='<div class="search-empty">No events right now. Check back soon!</div>';return;}
-      var html='';
-      if(res.eventsEnabled===false){el.innerHTML='<div class="search-empty">No events right now. Check back soon!</div>';return;}
-      var memberCid=m.cid||'';
-      giveaways.forEach(function(g){
-        var isEntered=false;
-        var entries=[];
-        try{entries=JSON.parse(g.entries||'[]');}catch(e){entries=[];}
-        for(var i=0;i<entries.length;i++){if(entries[i].cid===memberCid){isEntered=true;break;}}
-        var entryCount=entries.length;
-        var isClosed=g.status==='closed';
-        var winnerHtml='';
-        if(isClosed&&g.winnerName){
-          winnerHtml='<div style="text-align:center;padding:12px;background:rgba(198,151,63,.1);border-radius:8px;margin-top:10px"><div style="font-size:14px;color:var(--gold);font-weight:600">\ud83c\udfc6 Winner: '+esc(g.winnerName)+'</div></div>';
-        }
-        html+='<div class="ann-post">' +
-          '<div class="ann-title">'+esc(g.title||'')+'</div>' +
-          '<div class="ann-body" style="margin:8px 0">'+String(g.description||'')+'</div>' +
-          '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">'+entryCount+' '+(entryCount===1?'entry':'entries')+'</div>' +
-          winnerHtml;
-        var isLocked=g.status==='locked';
-        if(isClosed) html+='<div style="text-align:center;padding:8px;font-size:13px;color:var(--text-muted)">This giveaway has ended</div>';
-        else if(isLocked) html+='<div style="text-align:center;padding:10px;background:rgba(192,57,43,.1);border-radius:8px;font-size:14px;color:var(--red);font-weight:500">Entries closed \u2014 drawing in progress</div>';
-        else if(isEntered) html+='<div style="text-align:center;padding:10px;background:rgba(39,174,96,.1);border-radius:8px;font-size:14px;color:var(--green);font-weight:500">\u2705 You are entered!</div>';
-        else html+='<button class="btn btn-gold gw-enter" data-gid="'+esc(String(g.id))+'" style="width:100%;padding:12px;font-size:15px;font-weight:600">Enter Me</button>';
-        html+='</div>';
-      });
-      el.innerHTML=html;
+    function loadEvents(){
+      apiCall('getGiveaways',{token:state.token}).then(function(res){
+        state._eventsEnabled=res.eventsEnabled;
+        var el=document.getElementById('eventsContent');
+        if(!el)return;
+        if(res.error){el.innerHTML='<div class="err">'+esc(res.error)+'</div>';return;}
+        if(res.eventsEnabled===false){el.innerHTML='<div class="search-empty">No events right now. Check back soon!</div>';return;}
+        var giveaways=res.giveaways||[];
+        if(giveaways.length===0){el.innerHTML='<div class="search-empty">No events right now. Check back soon!</div>';return;}
+        var html='';
+        var memberCid=m.cid||'';
+        var hasActiveDraws=false;
+        giveaways.forEach(function(g){
+          var isEntered=false;
+          var entries=[];
+          try{entries=JSON.parse(g.entries||'[]');}catch(e){entries=[];}
+          for(var i=0;i<entries.length;i++){if(entries[i].cid===memberCid){isEntered=true;break;}}
+          var entryCount=entries.length;
+          var isClosed=g.status==='closed';
+          var isLocked=g.status==='locked';
+          if(isLocked)hasActiveDraws=true;
 
-      el.querySelectorAll('.gw-enter').forEach(function(btn){
-        btn.addEventListener('click',function(){
-          var gid=btn.getAttribute('data-gid');
-          btn.disabled=true;btn.textContent='Entering...';
-          apiCall('enterGiveaway',{token:state.token,giveawayId:gid,cid:m.cid,name:m.name,rank:m.rank,serialNumber:m.serialNumber}).then(function(res){
-            if(res.ok){setState({tab:'events'});}
-            else{btn.disabled=false;btn.textContent='Enter Me';}
+          html+='<div class="ann-post">';
+          html+='<div class="ann-title">'+esc(g.title||'')+'</div>';
+          html+='<div class="ann-body" style="margin:8px 0">'+String(g.description||'')+'</div>';
+          html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">'+entryCount+' '+(entryCount===1?'entry':'entries');
+          if(g.drawDate&&!isClosed){
+            var dt=new Date(g.drawDate);
+            var minsLeft=Math.round((dt.getTime()-Date.now())/60000);
+            if(minsLeft>0)html+=' \u00b7 Draw in '+minsLeft+' min';
+            else if(isLocked)html+=' \u00b7 Drawing now...';
+          }
+          html+='</div>';
+
+          if(isClosed&&g.winnerName){
+            // Show wheel replay button and winner
+            var replayId='replay_'+g.id;
+            html+='<div style="text-align:center;margin:10px 0">';
+            html+='<div id="wheelWrap_'+esc(String(g.id))+'" style="position:relative;width:280px;height:280px;margin:0 auto 10px;display:none">';
+            html+='<div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:20px solid #C6973F;z-index:2"></div>';
+            html+='<canvas id="wheelCanvas_'+esc(String(g.id))+'" width="560" height="560" style="width:280px;height:280px"></canvas>';
+            html+='<canvas id="confCanvas_'+esc(String(g.id))+'" width="280" height="280" style="position:absolute;inset:0;pointer-events:none;z-index:10"></canvas>';
+            html+='</div>';
+            html+='<button class="btn btn-gold gw-replay" data-gid="'+esc(String(g.id))+'" data-entries="'+esc(g.entries||'[]')+'" data-winner="'+esc(g.winnerName||'')+'" style="padding:10px 24px;font-size:14px;margin-bottom:8px">\u25b6 Watch the Draw</button>';
+            html+='<div style="padding:12px;background:rgba(198,151,63,.1);border-radius:8px"><div style="font-size:15px;color:var(--gold);font-weight:600">\ud83c\udfc6 '+(g.winnerName.includes(',')?'Winners':'Winner')+': '+esc(g.winnerName)+'</div></div>';
+            html+='</div>';
+
+            // Scrollable entry list
+            html+='<div style="margin-top:10px"><div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">All entries:</div>';
+            html+='<div style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">';
+            var winnerCids=(g.winnerCid||'').split(',');
+            entries.forEach(function(e){
+              var isW=winnerCids.indexOf(e.cid)>=0;
+              html+='<div style="padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px;display:flex;align-items:center;gap:8px;'+(isW?'background:rgba(198,151,63,.1);color:var(--gold);font-weight:600':'color:var(--text-dim)')+'">';
+              html+='<span style="width:24px;height:24px;border-radius:50%;background:var(--surface-raised);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">'+e.num+'</span>';
+              html+=esc(e.rank)+' '+esc(e.name)+(isW?' \u2014 WINNER!':'');
+              html+='</div>';
+            });
+            html+='</div></div>';
+          } else if(isLocked){
+            html+='<div style="text-align:center;padding:10px;background:rgba(192,57,43,.1);border-radius:8px;font-size:14px;color:var(--red);font-weight:500">Entries closed \u2014 drawing in progress</div>';
+          } else if(isClosed){
+            html+='<div style="text-align:center;padding:8px;font-size:13px;color:var(--text-muted)">This giveaway has ended</div>';
+          } else if(isEntered){
+            html+='<div style="text-align:center;padding:10px;background:rgba(39,174,96,.1);border-radius:8px;font-size:14px;color:var(--green);font-weight:500">\u2705 You are entered!</div>';
+          } else {
+            html+='<button class="btn btn-gold gw-enter" data-gid="'+esc(String(g.id))+'" style="width:100%;padding:12px;font-size:15px;font-weight:600">Enter Me</button>';
+          }
+          html+='</div>';
+        });
+        el.innerHTML=html;
+
+        // Wire Enter Me buttons
+        el.querySelectorAll('.gw-enter').forEach(function(btn){
+          btn.addEventListener('click',function(){
+            var gid=btn.getAttribute('data-gid');
+            btn.disabled=true;btn.textContent='Entering...';
+            apiCall('enterGiveaway',{token:state.token,giveawayId:gid,cid:m.cid,name:m.name,rank:m.rank,serialNumber:m.serialNumber}).then(function(res){
+              if(res.ok){loadEvents();}
+              else{btn.disabled=false;btn.textContent='Enter Me';}
+            });
           });
         });
+
+        // Wire replay buttons
+        el.querySelectorAll('.gw-replay').forEach(function(btn){
+          btn.addEventListener('click',function(){
+            var gid=btn.getAttribute('data-gid');
+            var entries=[];try{entries=JSON.parse(btn.getAttribute('data-entries')||'[]');}catch(e){}
+            var winnerName=btn.getAttribute('data-winner')||'';
+            if(entries.length<2)return;
+            btn.style.display='none';
+            var wrap=document.getElementById('wheelWrap_'+gid);
+            if(wrap)wrap.style.display='block';
+            runWheelReplay(gid,entries,winnerName);
+          });
+        });
+
+        // Auto-poll every 30s if there are active draws
+        if(hasActiveDraws){
+          if(window._eventsPoll)clearInterval(window._eventsPoll);
+          window._eventsPoll=setInterval(function(){
+            if(state.tab!=='events'){clearInterval(window._eventsPoll);return;}
+            loadEvents();
+          },30000);
+        }
+      }).catch(function(err){
+        var el=document.getElementById('eventsContent');
+        if(el)el.innerHTML='<div class="err">Failed to load events.</div>';
       });
-    }).catch(function(err){
-      var el=document.getElementById('eventsContent');
-      if(el)el.innerHTML='<div class="err">Failed to load events.</div>';
-    });
+    }
+    loadEvents();
     return;
   }
 
@@ -1351,6 +1414,80 @@ function startCelebration() {
   }
   spawnFirework();
   animate();
+}
+
+function runWheelReplay(gid, entries, winnerName) {
+  var canvas = document.getElementById('wheelCanvas_' + gid);
+  var confCanvas = document.getElementById('confCanvas_' + gid);
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var confCtx = confCanvas ? confCanvas.getContext('2d') : null;
+  if (confCanvas) { confCanvas.width = 280; confCanvas.height = 280; }
+  var colors = ['#C6973F','#185FA5','#993C1D','#0F6E56','#534AB7','#993556','#854F0B','#3B6D11','#A32D2D','#085041','#3C3489','#72243E'];
+  var n = entries.length;
+
+  // Find winner index
+  var winnerNames = winnerName.split(', ');
+  var winnerIdx = 0;
+  for (var i = 0; i < entries.length; i++) {
+    var fullName = entries[i].rank + ' ' + entries[i].name;
+    if (winnerNames.indexOf(fullName) >= 0) { winnerIdx = i; break; }
+  }
+
+  // Shuffle but ensure winner lands under pointer
+  function shuffle(a) { var b = a.slice(); for (var i = b.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = b[i]; b[i] = b[j]; b[j] = t; } return b; }
+  var wheelOrder = shuffle(entries);
+  var winWheelIdx = 0;
+  for (var i = 0; i < wheelOrder.length; i++) { if (wheelOrder[i].num === entries[winnerIdx].num) { winWheelIdx = i; break; } }
+
+  var arc = (Math.PI * 2) / n;
+  var targetAngle = Math.PI * 1.5 - (winWheelIdx * arc + arc / 2);
+  var fullSpins = Math.PI * 2 * (14 + Math.random() * 4);
+  var totalRotation = fullSpins + (targetAngle % (Math.PI * 2));
+  if (totalRotation < fullSpins) totalRotation += Math.PI * 2;
+
+  var angle = 0;
+  function drawWheel() {
+    ctx.clearRect(0, 0, 560, 560);
+    for (var i = 0; i < n; i++) {
+      var sa = angle + i * arc;
+      ctx.beginPath(); ctx.moveTo(280, 280); ctx.arc(280, 280, 260, sa, sa + arc); ctx.closePath();
+      ctx.fillStyle = colors[(wheelOrder[i].num - 1) % colors.length]; ctx.fill();
+      ctx.strokeStyle = '#0B1A33'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.save(); ctx.translate(280, 280); ctx.rotate(sa + arc / 2);
+      ctx.fillStyle = '#E8E8EC'; ctx.font = '500 ' + (n > 20 ? '14' : '22') + 'px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(wheelOrder[i].num, 165, 0); ctx.restore();
+    }
+  }
+
+  var dur = 15000, start = performance.now();
+  function easeOut(t) { if (t < 0.3) return t / 0.3 * 0.5; var t2 = (t - 0.3) / 0.7; return 0.5 + 0.5 * (1 - Math.pow(1 - t2, 5)); }
+
+  function anim(now) {
+    var elapsed = now - start;
+    var t = Math.min(elapsed / dur, 1);
+    angle = easeOut(t) * totalRotation;
+    drawWheel();
+    if (t < 1) { requestAnimationFrame(anim); }
+    else { fireReplayConfetti(confCtx); }
+  }
+  requestAnimationFrame(anim);
+}
+
+function fireReplayConfetti(ctx) {
+  if (!ctx) return;
+  var ps = []; var cc = ['#C6973F','#D4AD5E','#E8E8EC','#C0392B','#27AE60','#3498DB','#E67E22','#9B59B6'];
+  for (var i = 0; i < 100; i++) {
+    ps.push({ x: 140, y: 140, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 1) * 8 - 2, w: Math.random() * 6 + 3, h: Math.random() * 4 + 2, rot: Math.random() * 360, vr: (Math.random() - 0.5) * 10, color: cc[Math.floor(Math.random() * cc.length)], life: 140 + Math.random() * 60, age: 0 });
+  }
+  function go() {
+    ctx.clearRect(0, 0, 280, 280); var alive = false;
+    ps.forEach(function(p) { p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.rot += p.vr; p.age++; if (p.age > p.life) return; alive = true; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI / 180); ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, 1 - p.age / p.life); ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore(); });
+    ctx.globalAlpha = 1; if (alive) requestAnimationFrame(go); else ctx.clearRect(0, 0, 280, 280);
+  }
+  go();
+  setTimeout(function() { for (var i = 0; i < 60; i++) { ps.push({ x: 140, y: 140, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 1) * 8 - 2, w: Math.random() * 6 + 3, h: Math.random() * 4 + 2, rot: Math.random() * 360, vr: (Math.random() - 0.5) * 10, color: cc[Math.floor(Math.random() * cc.length)], life: 140 + Math.random() * 60, age: 0 }); } }, 800);
 }
 
 function filterBBPosts(q) {
