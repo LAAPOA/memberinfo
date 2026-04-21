@@ -900,7 +900,7 @@ function render() {
               html+='<div class="gw-countdown" data-drawtime="'+dt.getTime()+'" style="text-align:center;padding:10px;background:rgba(198,151,63,.08);border-radius:8px;margin-bottom:8px;font-size:14px;color:var(--gold);font-weight:500"></div>';
               html+='<div>';
             }
-            else if(isLocked)html+=' \u00b7 Drawing now...';
+            else html+=' \u00b7 Drawing now...';
           }
           html+='</div>';
 
@@ -929,8 +929,6 @@ function render() {
               html+='</div>';
             });
             html+='</div></div>';
-          } else if(isLocked){
-            html+='<div style="text-align:center;padding:10px;background:rgba(192,57,43,.1);border-radius:8px;font-size:14px;color:var(--red);font-weight:500">Entries closed \u2014 drawing in progress</div>';
           } else if(isClosed){
             html+='<div style="text-align:center;padding:8px;font-size:13px;color:var(--text-muted)">This giveaway has ended</div>';
           } else if(isEntered){
