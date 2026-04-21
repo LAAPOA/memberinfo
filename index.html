@@ -273,6 +273,7 @@ async function handleLogin(e) {
   // Store bundled data from login
   state._announcements = res.announcements || null;
   state._birthdays = res.birthdays || null;
+  state._eventsEnabled = res.announcements ? res.announcements.eventsEnabled : true;
 
   setState({view:'info', member:res.member, token:res.token, row:res.row, loading:false, error:'', tab:'announce'});
   checkTokenExpiry();
