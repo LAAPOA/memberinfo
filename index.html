@@ -886,8 +886,7 @@ function render() {
           for(var i=0;i<entries.length;i++){if(entries[i].cid===memberCid){isEntered=true;break;}}
           var entryCount=entries.length;
           var isClosed=g.status==='closed';
-          var isLocked=g.status==='locked';
-          if(isLocked)hasActiveDraws=true;
+            if(g.drawDate&&!isClosed){var dl=new Date(g.drawDate).getTime();if(dl>Date.now())hasActiveDraws=true;}
 
           html+='<div class="ann-post">';
           html+='<div class="ann-title">'+esc(g.title||'')+'</div>';
@@ -895,8 +894,12 @@ function render() {
           html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">'+entryCount+' '+(entryCount===1?'entry':'entries');
           if(g.drawDate&&!isClosed){
             var dt=new Date(g.drawDate);
-            var minsLeft=Math.round((dt.getTime()-Date.now())/60000);
-            if(minsLeft>0)html+=' \u00b7 Draw in '+minsLeft+' min';
+            var secsLeft=Math.round((dt.getTime()-Date.now())/1000);
+            if(secsLeft>0){
+              html+='</div>';
+              html+='<div class="gw-countdown" data-drawtime="'+dt.getTime()+'" style="text-align:center;padding:10px;background:rgba(198,151,63,.08);border-radius:8px;margin-bottom:8px;font-size:14px;color:var(--gold);font-weight:500"></div>';
+              html+='<div>';
+            }
             else if(isLocked)html+=' \u00b7 Drawing now...';
           }
           html+='</div>';
@@ -973,6 +976,29 @@ function render() {
             loadEvents();
           },30000);
         }
+
+        // Live countdown timers
+        function updateCountdowns(){
+          document.querySelectorAll('.gw-countdown').forEach(function(el){
+            var drawTime=parseInt(el.getAttribute('data-drawtime'));
+            var secsLeft=Math.round((drawTime-Date.now())/1000);
+            if(secsLeft<=0){el.textContent='Drawing now...';return;}
+            var h=Math.floor(secsLeft/3600);
+            var m=Math.floor((secsLeft%3600)/60);
+            var s=secsLeft%60;
+            var txt='Drawing in ';
+            if(h>0)txt+=h+'h '+m+'m '+s+'s';
+            else if(m>0)txt+=m+'m '+s+'s';
+            else txt+=s+'s';
+            el.textContent=txt;
+          });
+        }
+        updateCountdowns();
+        if(window._countdownTimer)clearInterval(window._countdownTimer);
+        window._countdownTimer=setInterval(function(){
+          if(state.tab!=='events'){clearInterval(window._countdownTimer);return;}
+          updateCountdowns();
+        },1000);
       }).catch(function(err){
         var el=document.getElementById('eventsContent');
         if(el)el.innerHTML='<div class="err">Failed to load events.</div>';
