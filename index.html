@@ -809,8 +809,7 @@ function render() {
       }
 
       var posts = annRes.posts || [];
-      var bdayPos = annRes.birthdayPosition !== undefined ? Number(annRes.birthdayPosition) : 0;
-      var videoPos = annRes.videoPosition !== undefined ? Number(annRes.videoPosition) : -1;
+      var announcementOrder = annRes.announcementOrder || [];
       var videoUrl = annRes.videoUrl || '';
       var videoEnabled = annRes.videoEnabled || false;
 
@@ -819,9 +818,10 @@ function render() {
         return;
       }
 
-      // Build ordered output with birthday and video at configured positions
-      var allItems = posts.map(function(p){
-        return '<div class="ann-post"><div class="ann-meta">'+esc(String(p.timestamp||''))+(p.postedBy?' \u00b7 '+esc(String(p.postedBy)):'')+'</div><div class="ann-title">'+esc(String(p.title||''))+'</div><div class="ann-body">'+String(p.body||'')+'</div></div>';
+      // Build post HTML map by id
+      var postMap = {};
+      posts.forEach(function(p){
+        postMap[String(p.id)] = '<div class="ann-post"><div class="ann-meta">'+esc(String(p.timestamp||''))+(p.postedBy?' \u00b7 '+esc(String(p.postedBy)):'')+'</div><div class="ann-title">'+esc(String(p.title||''))+'</div><div class="ann-body">'+String(p.body||'')+'</div></div>';
       });
 
       // Build video embed HTML
@@ -833,15 +833,25 @@ function render() {
         videoHtml = '<div style="background:var(--navy);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px"><div style="position:relative;padding-bottom:56.25%;height:0"><iframe src="'+esc(embedUrl)+'" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div></div>';
       }
 
-      // Insert special items at configured positions (higher index first)
-      var inserts = [];
-      if (bdayHtml) inserts.push({pos:bdayPos, html:bdayHtml});
-      if (videoHtml) inserts.push({pos:videoPos>=0?videoPos:allItems.length, html:videoHtml});
-      inserts.sort(function(a,b){return b.pos-a.pos;});
-      inserts.forEach(function(ins){
-        if(ins.pos>=0&&ins.pos<=allItems.length) allItems.splice(ins.pos,0,ins.html);
-        else allItems.push(ins.html);
-      });
+      // Build ordered output from JSON order
+      var allItems = [];
+      if (announcementOrder.length > 0) {
+        announcementOrder.forEach(function(id){
+          if (id === 'BIRTHDAYS' && bdayHtml) allItems.push(bdayHtml);
+          else if (id === 'VIDEO' && videoHtml) allItems.push(videoHtml);
+          else if (postMap[id]) { allItems.push(postMap[id]); delete postMap[id]; }
+        });
+        // Add any posts not in order (newly created)
+        Object.values(postMap).forEach(function(h){ allItems.push(h); });
+        // Ensure birthday/video show if not in order
+        if (bdayHtml && announcementOrder.indexOf('BIRTHDAYS') < 0) allItems.unshift(bdayHtml);
+        if (videoHtml && announcementOrder.indexOf('VIDEO') < 0) allItems.push(videoHtml);
+      } else {
+        // No saved order — default: birthday, video, posts
+        if (bdayHtml) allItems.push(bdayHtml);
+        if (videoHtml) allItems.push(videoHtml);
+        posts.forEach(function(p){ allItems.push(postMap[String(p.id)] || ''); });
+      }
 
       el.innerHTML = allItems.join('');
       if (bdayHtml) startCelebration();
