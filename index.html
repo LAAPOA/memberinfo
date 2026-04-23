@@ -444,7 +444,7 @@ var pusherChannel=null;
 function initPusher(){
   if(pusherInstance)return;
   try{
-    pusherInstance=new Pusher('c9c00a85c3d27d740e24',{cluster:'us3',forceTLS:true});
+    pusherInstance=new Pusher('809d81c32998580a867c',{cluster:'us3',forceTLS:true});
     pusherChannel=pusherInstance.subscribe('laapoa-giveaway');
     pusherChannel.bind('spin',function(data){
       if(state.tab==='events'){showLiveWheel(data);}
