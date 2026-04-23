@@ -245,7 +245,7 @@ function checkTokenExpiry() {
 }
 
 // Start expiry checker on load
-if (state.token) checkTokenExpiry();
+if (state.token) { checkTokenExpiry(); initPusher(); }
 
 async function apiCall(action, payload) {
   try {
