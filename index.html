@@ -178,6 +178,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .cf-btn{padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;font-family:inherit;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
 .cf-btn-add{background:var(--gold);color:var(--navy)}
 </style>
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 </head>
 <body>
 <div class="container" id="app"></div>
@@ -277,6 +278,7 @@ async function handleLogin(e) {
 
   setState({view:'info', member:res.member, token:res.token, row:res.row, loading:false, error:'', tab:'announce'});
   checkTokenExpiry();
+  initPusher();
   // Check announcement count for badge using bundled data
   var annData = res.announcements;
   if(annData&&annData.ok&&annData.posts){
@@ -436,6 +438,91 @@ let expandedContact=null;
 let annBadgeCount=0;
 let annLastSeen=parseInt(localStorage.getItem('laapoa_ann_seen')||'0');
 
+// Pusher live wheel
+var pusherInstance=null;
+var pusherChannel=null;
+function initPusher(){
+  if(pusherInstance)return;
+  try{
+    pusherInstance=new Pusher('c9c00a85c3d27d740e24',{cluster:'us3',forceTLS:true});
+    pusherChannel=pusherInstance.subscribe('laapoa-giveaway');
+    pusherChannel.bind('spin',function(data){
+      if(state.tab==='events'){showLiveWheel(data);}
+      else{window._pendingSpin=data;}
+    });
+  }catch(e){}
+}
+
+function showLiveWheel(data){
+  var el=document.getElementById('eventsContent');
+  if(!el)return;
+  var wo=data.wheelOrder||[];
+  var winNum=data.winnerNum;
+  var title=data.giveawayTitle||'Drawing';
+  var totalRotation=data.totalRotation||Math.PI*2*17;
+  if(wo.length<2)return;
+
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML='<div style="font-size:18px;font-weight:600;color:#C6973F;margin-bottom:8px;text-align:center">LIVE DRAW: '+esc(title)+'</div>'+
+    '<div style="position:relative;width:280px;height:280px;margin-bottom:8px">'+
+    '<div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:20px solid #C6973F;z-index:2"></div>'+
+    '<canvas id="liveWheelCv" width="560" height="560" style="width:280px;height:280px"></canvas>'+
+    '<div id="liveCenter" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:66px;height:66px;border-radius:50%;background:#0B1A33;border:3px solid #C6973F;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;overflow:hidden;padding:4px"><div id="liveCNum" style="font-size:15px;color:#C6973F;font-weight:500">#</div><div id="liveCName" style="font-size:9px;color:#C6973F;text-align:center;line-height:1.1;max-width:56px;word-wrap:break-word"></div></div>'+
+    '<canvas id="liveConfCv" width="280" height="280" style="position:absolute;inset:0;pointer-events:none;z-index:10"></canvas>'+
+    '</div>'+
+    '<div id="liveWinnerText" style="font-size:16px;font-weight:500;color:#C6973F;text-align:center;min-height:24px"></div>'+
+    '<div id="liveEntryList" style="max-height:180px;overflow-y:auto;width:280px;border:1px solid rgba(198,151,63,.2);border-radius:8px;margin-top:8px"></div>';
+  document.body.appendChild(overlay);
+
+  var cv=document.getElementById('liveWheelCv');
+  var ctx=cv.getContext('2d');
+  var colors=['#C6973F','#185FA5','#993C1D','#0F6E56','#534AB7','#993556','#854F0B','#3B6D11','#A32D2D','#085041','#3C3489','#72243E'];
+  var n=wo.length,arc=Math.PI*2/n,angle=0;
+
+  function drawW(){
+    ctx.clearRect(0,0,560,560);
+    for(var i=0;i<n;i++){var sa=angle+i*arc;ctx.beginPath();ctx.moveTo(280,280);ctx.arc(280,280,260,sa,sa+arc);ctx.closePath();ctx.fillStyle=colors[(wo[i].num-1)%colors.length];ctx.fill();ctx.strokeStyle='#0B1A33';ctx.lineWidth=2;ctx.stroke();ctx.save();ctx.translate(280,280);ctx.rotate(sa+arc/2);ctx.fillStyle='#E8E8EC';ctx.font='500 '+(n>16?'14':'22')+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(wo[i].num,n>16?150:165,0);ctx.restore();}
+  }
+  function getCur(){var pa=(Math.PI*1.5-angle)%(Math.PI*2);if(pa<0)pa+=Math.PI*2;return wo[Math.floor(pa/arc)%n];}
+
+  function renderList(activeNum,winnerNum){
+    var list=document.getElementById('liveEntryList');if(!list)return;
+    var h='';wo.forEach(function(e){var isW=winnerNum&&e.num===winnerNum;var isA=activeNum===e.num&&!isW;
+      h+='<div style="padding:6px 10px;border-bottom:1px solid rgba(198,151,63,.1);font-size:12px;display:flex;align-items:center;gap:8px;color:'+(isW?'#C6973F':isA?'#C6973F':'#8A8FA0')+';font-weight:'+(isW||isA?'500':'400')+';background:'+(isW?'rgba(198,151,63,.15)':isA?'rgba(198,151,63,.08)':'transparent')+'"><span style="width:22px;height:22px;border-radius:50%;background:'+colors[(e.num-1)%colors.length]+';display:flex;align-items:center;justify-content:center;font-size:10px;color:#E8E8EC;flex-shrink:0">'+e.num+'</span>'+esc(e.rank)+' '+esc(e.name)+(isW?' \u2014 WINNER!':'')+'</div>';
+    });list.innerHTML=h;
+  }
+
+  var lastNum=-1;
+  var dur=15000,start=performance.now();
+  function ease(t){if(t<0.3)return t/0.3*0.5;var t2=(t-0.3)/0.7;return 0.5+0.5*(1-Math.pow(1-t2,5));}
+
+  renderList(-1,null);
+
+  function anim(now){
+    var el=now-start,t=Math.min(el/dur,1);
+    angle=ease(t)*totalRotation;drawW();
+    var cur=getCur();
+    if(cur&&cur.num!==lastNum){lastNum=cur.num;document.getElementById('liveCNum').textContent='#'+cur.num;document.getElementById('liveCName').textContent=cur.rank+' '+cur.name;renderList(cur.num,null);}
+    if(t<1){requestAnimationFrame(anim);}
+    else{
+      var w=getCur();
+      document.getElementById('liveCNum').textContent='#'+w.num;
+      document.getElementById('liveCName').textContent=w.rank+' '+w.name;
+      document.getElementById('liveWinnerText').textContent='\ud83c\udfc6 '+w.rank+' '+w.name+' wins!';
+      renderList(w.num,w.num);
+      // Confetti
+      var ccv=document.getElementById('liveConfCv');if(ccv){ccv.width=280;ccv.height=280;var cctx=ccv.getContext('2d');
+      var ps=[];var cc=['#C6973F','#D4AD5E','#E8E8EC','#C0392B','#27AE60','#3498DB','#E67E22','#9B59B6'];
+      for(var i=0;i<100;i++){ps.push({x:140,y:140,vx:(Math.random()-.5)*10,vy:(Math.random()-1)*8-2,w:Math.random()*6+3,h:Math.random()*4+2,rot:Math.random()*360,vr:(Math.random()-.5)*10,color:cc[Math.floor(Math.random()*cc.length)],life:140+Math.random()*60,age:0});}
+      function go(){cctx.clearRect(0,0,280,280);var alive=false;ps.forEach(function(p){p.x+=p.vx;p.y+=p.vy;p.vy+=.1;p.rot+=p.vr;p.age++;if(p.age>p.life)return;alive=true;cctx.save();cctx.translate(p.x,p.y);cctx.rotate(p.rot*Math.PI/180);cctx.fillStyle=p.color;cctx.globalAlpha=Math.max(0,1-p.age/p.life);cctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);cctx.restore();});cctx.globalAlpha=1;if(alive)requestAnimationFrame(go);}go();}
+      // Auto-close after 8 seconds
+      setTimeout(function(){if(overlay.parentNode)overlay.parentNode.removeChild(overlay);loadEvents();},8000);
+    }
+  }
+  requestAnimationFrame(anim);
+}
+
 async function doSearch() {
   const q=searchQuery.trim();
   if(q.length<2){searchResults=[];searchLoading=false;render();return;}
@@ -552,7 +639,7 @@ function render() {
       });
       setState({tab:'announce'});
     });
-    if(te)te.addEventListener('click',function(){setState({tab:'events'});});
+    if(te)te.addEventListener('click',function(){setState({tab:'events'});if(window._pendingSpin){showLiveWheel(window._pendingSpin);window._pendingSpin=null;}});
     if(tb)tb.addEventListener('click',function(){setState({tab:'bulletin'});});
   }
 
