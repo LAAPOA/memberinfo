@@ -50,7 +50,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--navy);flex-shrink:0}
 .member-name{font-size:18px;font-weight:700}
 .member-detail{font-size:13px;color:var(--text-dim);margin-top:2px}
-.footer{text-align:center;font-size:11px;color:var(--text-muted);padding:8px}
+.footer{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-muted);padding:8px}
 .info-row{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:14px;border-bottom:1px solid var(--border)}
 .info-row:last-child{border-bottom:none}
 .info-label{color:var(--text-dim);min-width:90px;font-size:13px}
@@ -653,7 +653,7 @@ function render() {
         '<div class="field"><label>Date of Birth</label><input id="dob" type="date"></div>' +
         '<button class="btn btn-gold" id="loginBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Verifying...':'Sign In')+'</button>' +
       '</div>' +
-      '<div class="footer">LAAPOA Member Info</div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.1</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     document.getElementById('loginBtn').addEventListener('click', handleLogin);
     ['ln','cid','dob'].forEach(id => {
       const el = document.getElementById(id);
@@ -695,7 +695,7 @@ function render() {
         '<div class="info-row"><span class="info-label">Address</span><span class="info-val" style="white-space:pre-line">'+(fmtAddr?esc(fmtAddr).replace(/\\n/g,'\n'):'—')+'</span></div>' +
         '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
-      '<div class="footer">LAAPOA Member Info</div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.1</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
     document.getElementById('editToggle').addEventListener('click', function(){setState({tab:'edit',error:'',success:''});});
@@ -720,7 +720,7 @@ function render() {
           (ds.countdownMs>0?'<div id="countdown" style="margin-top:20px;font-family:\'JetBrains Mono\',monospace;font-size:36px;color:var(--gold);letter-spacing:2px"></div><div style="font-size:11px;color:var(--text-muted);margin-top:6px">until access is restored</div>':'') +
         '</div>' +
       '</div>' +
-      '<div class="footer">LAAPOA Member Info</div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.1</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
 
@@ -794,7 +794,7 @@ function render() {
         '<div class="search-input"><input id="searchQ" type="text" placeholder="Search by name or serial #..." value="'+esc(searchQuery)+'"><button class="btn btn-gold" id="searchBtn" style="width:auto;min-width:80px;margin-left:8px">Search</button></div>' +
         resultsHtml +
       '</div>' +
-      '<div class="footer">LAAPOA Member Info</div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.1</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
     const sq = document.getElementById('searchQ');
@@ -842,7 +842,7 @@ function render() {
         tabBar('announce') +
         '<div id="annContent">'+annHtml+'</div>' +
       '</div>' +
-      '<div class="footer">LAAPOA Member Info</div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.1</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     // Load announcements and birthdays together
@@ -961,7 +961,7 @@ function render() {
         tabBar('events') +
         '<div id="eventsContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading events...</div></div>' +
       '</div>' +
-      '<div class="footer">LAAPOA Member Info</div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.1</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     function loadEvents(){
@@ -1157,7 +1157,7 @@ function render() {
         '</div>' +
         '<div id="bbContent">'+bbHtml+'</div>' +
       '</div>' +
-      '<div class="footer">LAAPOA Member Info</div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.1</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     document.getElementById('bbSearchToggle').addEventListener('click', function(){
       var bar=document.getElementById('bbSearchBar');
@@ -1435,7 +1435,7 @@ function render() {
         '<button class="btn btn-gold" id="saveBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Saving...':'Save Changes')+'</button>' +
       '</div>' +
     '</div>' +
-    '<div class="footer">LAAPOA Member Info</div>';
+    '<div class="footer"><span style="opacity:.5">ver 1.0.1</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
   document.getElementById('saveBtn').addEventListener('click', handleUpdate);
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
