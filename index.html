@@ -1122,19 +1122,34 @@ function render() {
         '<div id="bbSearchBar" style="display:none;margin-bottom:12px"><input id="bbSearchQ" type="text" placeholder="Search posts..." style="width:100%;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;-webkit-appearance:none"></div>' +
         '<div class="bb-compose" id="bbCompose" style="display:none">' +
           '<input id="bbTitle" type="text" placeholder="Post title" maxlength="200">' +
-          '<div class="bb-rte-toolbar" id="bbToolbar">' +
+          '<div class="bb-rte-toolbar" id="bbToolbar" style="overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none">' +
+            '<button data-cmd="undo" title="Undo">↩</button>' +
+            '<button data-cmd="redo" title="Redo">↪</button>' +
+            '<span style="width:1px;background:var(--border);margin:2px 4px;flex-shrink:0"></span>' +
             '<button data-cmd="bold" title="Bold"><strong>B</strong></button>' +
             '<button data-cmd="italic" title="Italic"><em>I</em></button>' +
             '<button data-cmd="underline" title="Underline"><u>U</u></button>' +
             '<button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>' +
-            '<span style="width:1px;background:var(--border);margin:2px 4px"></span>' +
-            '<button data-cmd="insertUnorderedList" title="Bullet list">\u2022</button>' +
-            '<button data-cmd="insertOrderedList" title="Numbered list">1.</button>' +
-            '<button data-cmd="formatBlock" data-val="BLOCKQUOTE" title="Quote">\u201c</button>' +
-            '<span style="width:1px;background:var(--border);margin:2px 4px"></span>' +
+            '<span style="width:1px;background:var(--border);margin:2px 4px;flex-shrink:0"></span>' +
+            '<select id="bbFontSize"><option value="">Size</option><option value="1">Small</option><option value="3">Normal</option><option value="4">Medium</option><option value="5">Large</option><option value="6">X-Large</option><option value="7">Huge</option></select>' +
             '<select id="bbHeading"><option value="">Normal</option><option value="H2">Heading</option><option value="H3">Subheading</option></select>' +
+            '<span style="width:1px;background:var(--border);margin:2px 4px;flex-shrink:0"></span>' +
             '<select id="bbColor"><option value="">Color</option><option value="#E8E8EC">White</option><option value="#C6973F">Gold</option><option value="#C0392B">Red</option><option value="#27AE60">Green</option><option value="#3498DB">Blue</option><option value="#E67E22">Orange</option><option value="#9B59B6">Purple</option></select>' +
+            '<select id="bbHighlight"><option value="">Highlight</option><option value="#C6973F">Gold</option><option value="#C0392B">Red</option><option value="#27AE60">Green</option><option value="#3498DB">Blue</option><option value="#E67E22">Orange</option><option value="#9B59B6">Purple</option><option value="#555555">Gray</option></select>' +
+            '<span style="width:1px;background:var(--border);margin:2px 4px;flex-shrink:0"></span>' +
+            '<button data-cmd="justifyLeft" title="Align left">≡</button>' +
+            '<button data-cmd="justifyCenter" title="Align center">≣</button>' +
+            '<button data-cmd="justifyRight" title="Align right">≢</button>' +
+            '<span style="width:1px;background:var(--border);margin:2px 4px;flex-shrink:0"></span>' +
+            '<button data-cmd="insertUnorderedList" title="Bullet list">•</button>' +
+            '<button data-cmd="insertOrderedList" title="Numbered list">1.</button>' +
+            '<button data-cmd="indent" title="Indent">⇥</button>' +
+            '<button data-cmd="outdent" title="Outdent">⇤</button>' +
+            '<button data-cmd="formatBlock" data-val="BLOCKQUOTE" title="Quote">\u201c</button>' +
+            '<span style="width:1px;background:var(--border);margin:2px 4px;flex-shrink:0"></span>' +
             '<button id="bbLinkBtn" title="Insert link">\ud83d\udd17</button>' +
+            '<button id="bbImgBtn" title="Insert image">\ud83d\uddbc</button>' +
+            '<button id="bbHRBtn" title="Horizontal divider">&mdash;</button>' +
             '<button data-cmd="removeFormat" title="Clear formatting">\u2715</button>' +
           '</div>' +
           '<div class="bb-rte-body" id="bbBody" contenteditable="true" data-placeholder="Write your message..."></div>' +
@@ -1189,10 +1204,31 @@ function render() {
       this.selectedIndex=0;
       document.getElementById('bbBody').focus();
     });
+    document.getElementById('bbFontSize').addEventListener('change',function(){
+      if(this.value){document.execCommand('fontSize',false,this.value);}
+      this.selectedIndex=0;
+      document.getElementById('bbBody').focus();
+    });
+    document.getElementById('bbHighlight').addEventListener('change',function(){
+      if(this.value){document.execCommand('hiliteColor',false,this.value);}
+      this.selectedIndex=0;
+      document.getElementById('bbBody').focus();
+    });
     document.getElementById('bbLinkBtn').addEventListener('mousedown',function(ev){ev.preventDefault();});
     document.getElementById('bbLinkBtn').addEventListener('click',function(){
       var url=prompt('Enter URL:','https://');
       if(url){document.execCommand('createLink',false,url);}
+      document.getElementById('bbBody').focus();
+    });
+    document.getElementById('bbImgBtn').addEventListener('mousedown',function(ev){ev.preventDefault();});
+    document.getElementById('bbImgBtn').addEventListener('click',function(){
+      var url=prompt('Paste image URL:','https://');
+      if(url){document.execCommand('insertHTML',false,'<img src="'+url.replace(/"/g,'&quot;')+'" style="max-width:100%;border-radius:6px;margin:8px 0">');}
+      document.getElementById('bbBody').focus();
+    });
+    document.getElementById('bbHRBtn').addEventListener('mousedown',function(ev){ev.preventDefault();});
+    document.getElementById('bbHRBtn').addEventListener('click',function(){
+      document.execCommand('insertHTML',false,'<hr style="border:none;border-top:1px solid var(--border);margin:12px 0">');
       document.getElementById('bbBody').focus();
     });
     document.getElementById('bbPost').addEventListener('click', function(){
