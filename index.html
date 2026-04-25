@@ -275,6 +275,7 @@ async function handleLogin(e) {
   state._announcements = res.announcements || null;
   state._birthdays = res.birthdays || null;
   state._eventsEnabled = res.announcements ? res.announcements.eventsEnabled : true;
+  state._decideEnabled = res.announcements ? res.announcements.decideEnabled : true;
 
   setState({view:'info', member:res.member, token:res.token, row:res.row, loading:false, error:'', tab:'announce'});
   checkTokenExpiry();
@@ -611,6 +612,7 @@ function render() {
       '<button class="tab'+(active==='announce'?' on':'')+'" id="tabAnn">Announce'+(annBadgeCount>0&&active!=='announce'?'<span class="ann-badge">'+annBadgeCount+'</span>':'')+'</button>' +
       '<span style="width:2px;background:var(--gold);opacity:.3;margin:6px 0;flex-shrink:0"></span>' +
       (state._eventsEnabled!==false?'<button class="tab'+(active==='events'?' on':'')+'" id="tabEvents">Events</button>':'') +
+      (state._decideEnabled!==false?'<span style="width:2px;background:var(--gold);opacity:.3;margin:6px 0;flex-shrink:0"></span><button class="tab'+(active==='decide'?' on':'')+'" id="tabDecide">Decide</button>':'') +
       '<button class="tab'+(active==='bulletin'?' on':'')+'" id="tabBB">'+bbLabel+'</button>' +
     '</div>';
   }
@@ -640,6 +642,8 @@ function render() {
       setState({tab:'announce'});
     });
     if(te)te.addEventListener('click',function(){setState({tab:'events'});if(window._pendingSpin){showLiveWheel(window._pendingSpin);window._pendingSpin=null;}});
+    var tdc=document.getElementById('tabDecide');
+    if(tdc)tdc.addEventListener('click',function(){setState({tab:'decide'});});
     if(tb)tb.addEventListener('click',function(){setState({tab:'bulletin'});});
   }
 
@@ -653,7 +657,7 @@ function render() {
         '<div class="field"><label>Date of Birth</label><input id="dob" type="date"></div>' +
         '<button class="btn btn-gold" id="loginBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Verifying...':'Sign In')+'</button>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     document.getElementById('loginBtn').addEventListener('click', handleLogin);
     ['ln','cid','dob'].forEach(id => {
       const el = document.getElementById(id);
@@ -695,7 +699,7 @@ function render() {
         '<div class="info-row"><span class="info-label">Address</span><span class="info-val" style="white-space:pre-line">'+(fmtAddr?esc(fmtAddr).replace(/\\n/g,'\n'):'—')+'</span></div>' +
         '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
     document.getElementById('editToggle').addEventListener('click', function(){setState({tab:'edit',error:'',success:''});});
@@ -720,7 +724,7 @@ function render() {
           (ds.countdownMs>0?'<div id="countdown" style="margin-top:20px;font-family:\'JetBrains Mono\',monospace;font-size:36px;color:var(--gold);letter-spacing:2px"></div><div style="font-size:11px;color:var(--text-muted);margin-top:6px">until access is restored</div>':'') +
         '</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
 
@@ -794,7 +798,7 @@ function render() {
         '<div class="search-input"><input id="searchQ" type="text" placeholder="Search by name or serial #..." value="'+esc(searchQuery)+'"><button class="btn btn-gold" id="searchBtn" style="width:auto;min-width:80px;margin-left:8px">Search</button></div>' +
         resultsHtml +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
     const sq = document.getElementById('searchQ');
@@ -842,7 +846,7 @@ function render() {
         tabBar('announce') +
         '<div id="annContent">'+annHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     // Load announcements and birthdays together
@@ -961,7 +965,7 @@ function render() {
         tabBar('events') +
         '<div id="eventsContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading events...</div></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     function loadEvents(){
@@ -1103,6 +1107,163 @@ function render() {
     return;
   }
 
+  // Decide / Voting view
+  if (state.tab === 'decide') {
+    app.innerHTML =
+      '<div class="card">' +
+        '<div class="member-header">' +
+          '<div class="avatar">'+initials+'</div>' +
+          '<div><div class="member-name">'+esc(m.name)+'</div>' +
+          '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' \u00b7 '+esc(m.mou):'')+'</div></div>' +
+        '</div>' +
+        tabBar('decide') +
+        '<div id="decideContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading votes...</div></div>' +
+      '</div>' +
+      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+    wireTabEvents();
+
+    apiCall('getVotes',{token:state.token,mou:m.mou,cid:m.cid}).then(function(res){
+      var el=document.getElementById('decideContent');
+      if(!el)return;
+      if(res.decideEnabled===false){el.innerHTML='<div class="search-empty">No votes right now.</div>';return;}
+      var votes=res.votes||[];
+      if(votes.length===0){el.innerHTML='<div class="search-empty">No votes available right now.</div>';return;}
+      var html='';
+      votes.forEach(function(v){
+        var isClosed=v.status==='closed';
+        var optList=(v.options||'').split('|').filter(Boolean);
+        var total=v.totalVoters||0;
+
+        html+='<div class="ann-post">';
+        html+='<div class="ann-title">'+esc(v.title)+'</div>';
+        if(v.description)html+='<div class="ann-body" style="margin:6px 0">'+String(v.description)+'</div>';
+        html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">';
+        html+=(v.type==='yesno'?'Yes/No':v.type==='ranked'?'Ranked Choice':'Multiple Choice');
+        html+=' \u00b7 '+total+' vote'+(total!==1?'s':'');
+        if(v.deadline&&!isClosed){var dl=new Date(v.deadline);var secsLeft=Math.round((dl.getTime()-Date.now())/1000);if(secsLeft>0){var h=Math.floor(secsLeft/3600),mn=Math.floor((secsLeft%3600)/60);html+=' \u00b7 Closes in '+(h>0?h+'h ':'')+(mn>0?mn+'m':'<1m');}}
+        if(isClosed)html+=' \u00b7 Closed';
+        html+='</div>';
+
+        // Show results if live or closed
+        if(v.results&&(v.showResults==='live'||isClosed)){
+          optList.forEach(function(opt){
+            var count=v.results[opt]||0;
+            var pct=total>0?Math.round(count/total*100):0;
+            var barColor=opt==='Yes'?'var(--green)':opt==='No'?'var(--red)':'var(--gold)';
+            html+='<div style="margin-bottom:6px">';
+            html+='<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:2px"><span>'+esc(opt)+'</span><span>'+(v.type==='ranked'?count+' pts':count+' ('+pct+'%)')+'</span></div>';
+            html+='<div style="height:6px;background:var(--surface);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+(v.type==='ranked'?Math.min(count/(total||1)*20,100):pct)+'%;background:'+barColor+';border-radius:3px"></div></div>';
+            html+='</div>';
+          });
+        }
+
+        // Voting UI
+        if(isClosed){
+          html+='<div style="text-align:center;padding:8px;font-size:13px;color:var(--text-muted)">Voting has closed</div>';
+        }else if(v.hasVoted){
+          html+='<div style="text-align:center;padding:10px;background:rgba(39,174,96,.1);border-radius:8px;font-size:14px;color:var(--green);font-weight:500">\u2705 Your vote has been recorded</div>';
+        }else{
+          if(v.type==='yesno'){
+            html+='<div style="display:flex;gap:8px;margin-top:8px">';
+            html+='<button class="btn btn-gold vote-btn" data-vid="'+esc(v.id)+'" data-choice="Yes" style="flex:1;padding:12px;font-size:15px;font-weight:600">Yes</button>';
+            html+='<button class="vote-btn" data-vid="'+esc(v.id)+'" data-choice="No" style="flex:1;padding:12px;font-size:15px;font-weight:600;background:none;border:1px solid var(--red);color:var(--red);border-radius:8px;cursor:pointer;font-family:inherit">No</button>';
+            html+='</div>';
+          }else if(v.type==='multiple'){
+            html+='<div style="margin-top:8px">';
+            optList.forEach(function(opt){
+              html+='<button class="vote-btn" data-vid="'+esc(v.id)+'" data-choice="'+esc(opt)+'" style="display:block;width:100%;padding:10px 14px;margin-bottom:6px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;text-align:left">'+esc(opt)+'</button>';
+            });
+            html+='</div>';
+          }else if(v.type==='ranked'){
+            html+='<div class="vote-ranked" data-vid="'+esc(v.id)+'" style="margin-top:8px">';
+            html+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Drag to rank (top = most preferred):</div>';
+            html+='<div class="rank-list" data-vid="'+esc(v.id)+'">';
+            optList.forEach(function(opt,idx){
+              html+='<div class="rank-item" draggable="true" data-opt="'+esc(opt)+'" style="padding:10px 14px;margin-bottom:4px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;cursor:grab;display:flex;align-items:center;gap:8px"><span style="color:var(--gold);font-weight:500;min-width:20px">'+(idx+1)+'.</span>'+esc(opt)+'</div>';
+            });
+            html+='</div>';
+            html+='<button class="btn btn-gold vote-ranked-submit" data-vid="'+esc(v.id)+'" style="width:100%;padding:12px;font-size:15px;font-weight:600;margin-top:8px">Submit Ranking</button>';
+            html+='</div>';
+          }
+        }
+        html+='</div>';
+      });
+      el.innerHTML=html;
+
+      // Wire yes/no and multiple choice buttons
+      el.querySelectorAll('.vote-btn').forEach(function(btn){
+        btn.addEventListener('click',function(){
+          var vid=btn.getAttribute('data-vid');
+          var choice=btn.getAttribute('data-choice');
+          btn.disabled=true;btn.textContent='Submitting...';
+          apiCall('castVote',{token:state.token,voteId:vid,cid:m.cid,choice:choice}).then(function(res){
+            if(res.ok){setState({tab:'decide'});}
+            else{btn.disabled=false;btn.textContent=choice;if(res.error)alert(res.error);}
+          });
+        });
+      });
+
+      // Wire ranked choice drag-and-drop
+      el.querySelectorAll('.rank-list').forEach(function(list){
+        var items=list.querySelectorAll('.rank-item');
+        var dragItem=null;
+        items.forEach(function(item){
+          item.addEventListener('dragstart',function(e){dragItem=item;item.style.opacity='0.5';});
+          item.addEventListener('dragend',function(e){item.style.opacity='1';dragItem=null;});
+          item.addEventListener('dragover',function(e){e.preventDefault();});
+          item.addEventListener('drop',function(e){
+            e.preventDefault();
+            if(dragItem&&dragItem!==item){
+              var allItems=Array.from(list.querySelectorAll('.rank-item'));
+              var fromIdx=allItems.indexOf(dragItem);
+              var toIdx=allItems.indexOf(item);
+              if(fromIdx<toIdx)list.insertBefore(dragItem,item.nextSibling);
+              else list.insertBefore(dragItem,item);
+              // Re-number
+              list.querySelectorAll('.rank-item').forEach(function(ri,i){ri.querySelector('span').textContent=(i+1)+'.';});
+            }
+          });
+          // Touch support
+          var touchY=0;
+          item.addEventListener('touchstart',function(e){dragItem=item;touchY=e.touches[0].clientY;item.style.opacity='0.5';},{passive:true});
+          item.addEventListener('touchmove',function(e){
+            e.preventDefault();
+            var touch=e.touches[0];
+            var target=document.elementFromPoint(touch.clientX,touch.clientY);
+            if(target&&target.classList&&target.classList.contains('rank-item')&&target!==dragItem){
+              var allItems=Array.from(list.querySelectorAll('.rank-item'));
+              var fromIdx=allItems.indexOf(dragItem);
+              var toIdx=allItems.indexOf(target);
+              if(fromIdx<toIdx)list.insertBefore(dragItem,target.nextSibling);
+              else list.insertBefore(dragItem,target);
+              list.querySelectorAll('.rank-item').forEach(function(ri,i){ri.querySelector('span').textContent=(i+1)+'.';});
+            }
+          },{passive:false});
+          item.addEventListener('touchend',function(e){if(dragItem)dragItem.style.opacity='1';dragItem=null;},{passive:true});
+        });
+      });
+
+      // Wire ranked submit
+      el.querySelectorAll('.vote-ranked-submit').forEach(function(btn){
+        btn.addEventListener('click',function(){
+          var vid=btn.getAttribute('data-vid');
+          var list=el.querySelector('.rank-list[data-vid="'+vid+'"]');
+          var ranked=[];
+          list.querySelectorAll('.rank-item').forEach(function(ri){ranked.push(ri.getAttribute('data-opt'));});
+          btn.disabled=true;btn.textContent='Submitting...';
+          apiCall('castVote',{token:state.token,voteId:vid,cid:m.cid,choice:ranked}).then(function(res){
+            if(res.ok){setState({tab:'decide'});}
+            else{btn.disabled=false;btn.textContent='Submit Ranking';if(res.error)alert(res.error);}
+          });
+        });
+      });
+    }).catch(function(err){
+      var el=document.getElementById('decideContent');
+      if(el)el.innerHTML='<div class="err">Failed to load votes: '+esc(String(err))+'</div>';
+    });
+    return;
+  }
+
   // Bulletin Board view
   if (state.tab === 'bulletin') {
     var bbHtml = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Loading board...</div>';
@@ -1115,10 +1276,13 @@ function render() {
         '</div>' +
         tabBar('bulletin') +
         '<div style="text-align:center;font-size:15px;font-weight:600;color:var(--gold);margin-bottom:12px">'+(m.mou==='MOU 28'?'LAPD Muni-Board':(m.mou==='MOU 65'?'Tree Trunk Postings':'Airport Bulletin Board'))+'</div>' +
-        '<div style="display:flex;justify-content:space-between;margin-bottom:12px">' +
-          '<button id="bbSearchToggle" style="background:#0F1F38;border:1px solid rgba(198,151,63,.3);border-radius:8px;padding:0;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden"><svg width="40" height="40" viewBox="0 0 48 48"><text x="3" y="11" font-size="8" fill="rgba(198,151,63,.15)" font-family="monospace">1010</text><text x="3" y="21" font-size="8" fill="rgba(198,151,63,.15)" font-family="monospace">0110</text><text x="3" y="31" font-size="8" fill="rgba(198,151,63,.15)" font-family="monospace">1001</text><text x="3" y="41" font-size="8" fill="rgba(198,151,63,.15)" font-family="monospace">0101</text><text x="24" y="11" font-size="8" fill="rgba(198,151,63,.15)" font-family="monospace">0110</text><text x="24" y="21" font-size="8" fill="rgba(198,151,63,.15)" font-family="monospace">1001</text><text x="24" y="31" font-size="8" fill="rgba(198,151,63,.15)" font-family="monospace">0010</text><text x="24" y="41" font-size="8" fill="rgba(198,151,63,.15)" font-family="monospace">1100</text><circle cx="19" cy="19" r="9" fill="none" stroke="#C6973F" stroke-width="1.5"/><circle cx="19" cy="19" r="5" fill="none" stroke="rgba(198,151,63,.3)" stroke-width="1"/><line x1="26" y1="26" x2="36" y2="36" stroke="#C6973F" stroke-width="2" stroke-linecap="round"/></svg></button>' +
-          '<button id="bbToggle" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--text);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> New Post</button>' +
-          '<button id="bbMyReacts" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;color:var(--text);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;position:relative">\ud83d\udc4d<span id="bbReactBadge" style="display:none;position:absolute;top:-6px;right:-6px;background:var(--red);color:white;font-size:10px;font-weight:600;min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 4px"></span></button>' +
+        '<div style="display:flex;justify-content:flex-end;margin-bottom:12px;position:relative">' +
+          '<button id="bbMenuBtn" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:18px;color:var(--text-dim);cursor:pointer;font-family:inherit;position:relative">\u22ee<span id="bbReactBadge" style="display:none;position:absolute;top:-6px;right:-6px;background:var(--red);color:white;font-size:10px;font-weight:600;min-width:16px;height:16px;border-radius:8px;align-items:center;justify-content:center;padding:0 4px"></span></button>' +
+          '<div id="bbMenuDropdown" style="display:none;position:absolute;right:0;top:38px;background:var(--surface-raised,#1a2744);border:1px solid var(--border);border-radius:8px;z-index:20;min-width:160px;box-shadow:0 4px 12px rgba(0,0,0,.4)">' +
+            '<button id="bbMenuNewPost" style="display:block;width:100%;padding:10px 16px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13px;font-family:inherit;text-align:left;border-bottom:1px solid var(--border)">\u270f\ufe0f New Post</button>' +
+            '<button id="bbMenuSearch" style="display:block;width:100%;padding:10px 16px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13px;font-family:inherit;text-align:left;border-bottom:1px solid var(--border)">\ud83d\udd0d Search</button>' +
+            '<button id="bbMenuReacts" style="display:block;width:100%;padding:10px 16px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13px;font-family:inherit;text-align:left">\ud83d\udc4d My Reactions</button>' +
+          '</div>' +
         '</div>' +
         '<div id="bbSearchBar" style="display:none;margin-bottom:12px"><input id="bbSearchQ" type="text" placeholder="Search posts..." style="width:100%;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;-webkit-appearance:none"></div>' +
         '<div class="bb-compose" id="bbCompose" style="display:none">' +
@@ -1152,15 +1316,30 @@ function render() {
             '<button id="bbImgBtn" title="Insert image">\ud83d\uddbc</button>' +
             '<button id="bbHRBtn" title="Horizontal divider">&mdash;</button>' +
             '<button data-cmd="removeFormat" title="Clear formatting">\u2715</button>' +
+            '<button id="bbSrcBtn" title="Toggle HTML source">&lt;/&gt;</button>' +
           '</div>' +
           '<div class="bb-rte-body" id="bbBody" contenteditable="true" data-placeholder="Write your message..."></div>' +
           '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-gold" id="bbPost" style="flex:1">Post</button><button class="btn btn-outline" id="bbCancel" style="flex:0;min-width:80px">Cancel</button></div>' +
         '</div>' +
         '<div id="bbContent">'+bbHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
-    document.getElementById('bbSearchToggle').addEventListener('click', function(){
+    // Wire three-dot menu
+    document.getElementById('bbMenuBtn').addEventListener('click',function(ev){
+      ev.stopPropagation();
+      var dd=document.getElementById('bbMenuDropdown');
+      dd.style.display=dd.style.display==='none'?'block':'none';
+    });
+    document.addEventListener('click',function(){var dd=document.getElementById('bbMenuDropdown');if(dd)dd.style.display='none';});
+    document.getElementById('bbMenuNewPost').addEventListener('click',function(){
+      document.getElementById('bbMenuDropdown').style.display='none';
+      var c=document.getElementById('bbCompose');
+      c.style.display=c.style.display==='none'?'flex':'none';
+      if(c.style.display==='flex')document.getElementById('bbTitle').focus();
+    });
+    document.getElementById('bbMenuSearch').addEventListener('click',function(){
+      document.getElementById('bbMenuDropdown').style.display='none';
       var bar=document.getElementById('bbSearchBar');
       bar.style.display=bar.style.display==='none'?'block':'none';
       if(bar.style.display==='block')document.getElementById('bbSearchQ').focus();
@@ -1168,11 +1347,6 @@ function render() {
     });
     document.getElementById('bbSearchQ').addEventListener('input', function(){
       filterBBPosts(this.value.trim().toLowerCase());
-    });
-    document.getElementById('bbToggle').addEventListener('click', function(){
-      var c=document.getElementById('bbCompose');
-      c.style.display=c.style.display==='none'?'flex':'none';
-      if(c.style.display==='flex')document.getElementById('bbTitle').focus();
     });
     document.getElementById('bbCancel').addEventListener('click', function(){
       document.getElementById('bbCompose').style.display='none';
@@ -1231,6 +1405,12 @@ function render() {
     document.getElementById('bbHRBtn').addEventListener('click',function(){
       document.execCommand('insertHTML',false,'<hr style="border:none;border-top:1px solid var(--border);margin:12px 0">');
       document.getElementById('bbBody').focus();
+    });
+    document.getElementById('bbSrcBtn').addEventListener('mousedown',function(ev){ev.preventDefault();});
+    document.getElementById('bbSrcBtn').addEventListener('click',function(){
+      var body=document.getElementById('bbBody');
+      if(body.dataset.mode==='html'){body.innerHTML=body.innerText;body.dataset.mode='visual';}
+      else{body.innerText=body.innerHTML;body.dataset.mode='html';}
     });
     document.getElementById('bbPost').addEventListener('click', function(){
       var title=document.getElementById('bbTitle').value.trim();
@@ -1303,10 +1483,11 @@ function render() {
         else{badge.style.display='none';}
       }
 
-      // Wire My Reactions button
-      var myReactsBtn=document.getElementById('bbMyReacts');
+      // Wire My Reactions from menu
+      var myReactsBtn=document.getElementById('bbMenuReacts');
       if(myReactsBtn){
         myReactsBtn.addEventListener('click',function(){
+          document.getElementById('bbMenuDropdown').style.display='none';
           if(myPostsData.length===0){
             el.innerHTML='<div class="search-empty">No reactions on your posts yet.</div><div style="text-align:center;margin-top:12px"><button class="btn btn-gold" style="padding:8px 20px;font-size:13px" onclick="setState({tab:\'bulletin\'})">Back</button></div>';
             return;
@@ -1511,7 +1692,7 @@ function render() {
         '<button class="btn btn-gold" id="saveBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Saving...':'Save Changes')+'</button>' +
       '</div>' +
     '</div>' +
-    '<div class="footer"><span style="opacity:.5">ver 1.0.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+    '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
   document.getElementById('saveBtn').addEventListener('click', handleUpdate);
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
