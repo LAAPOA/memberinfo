@@ -1267,11 +1267,19 @@ function render() {
         if (p.editedBySerial) editInfo = '<div style="font-size:10px;color:var(--text-muted);margin-top:6px;font-style:italic">Edited by '+esc(String(p.editedBySerial))+' \u00b7 '+esc(String(p.editedTimestamp||''))+'</div>';
         var pinnedBadge = p.pinned==='true' ? '<span style="font-size:10px;background:rgba(198,151,63,.15);color:var(--gold);padding:2px 6px;border-radius:4px;margin-right:6px">PINNED</span>' : '';
         var reactions=[];try{reactions=JSON.parse(p.reactions||'[]');}catch(e){reactions=[];}
-        var totalReacts=0;reactions.forEach(function(r){totalReacts+=(r.count||1);});
+        var ups=0,downs=0;reactions.forEach(function(r){if(r.type==='up')ups++;else if(r.type==='down')downs++;else ups+=(r.count||1);});
         var myReact=reactions.find(function(r){return r.cid===m.cid;});
         var editTs=String(p.editedTimestamp||'');
         var canReact=!myReact||(editTs&&myReact.lastReactVersion!==editTs);
-        var reactHtml='<div style="margin-top:8px;display:flex;align-items:center;gap:6px"><button class="bb-react" data-reactid="'+esc(String(p.id))+'" style="background:none;border:1px solid '+(canReact?'var(--gold)':'var(--border)')+';border-radius:16px;padding:4px 10px;font-size:13px;cursor:'+(canReact?'pointer':'default')+';color:'+(canReact?'var(--gold)':'var(--text-muted)')+';font-family:inherit;display:flex;align-items:center;gap:4px;opacity:'+(canReact?'1':'0.5')+'">\ud83d\udc4d'+(totalReacts>0?' <span style="font-size:12px">'+totalReacts+'</span>':'')+'</button></div>';
+        var dimStyle='border:1px solid var(--border);color:var(--text-muted);cursor:default;opacity:0.5';
+        var activeUpStyle='border:1px solid var(--green);color:var(--green);cursor:pointer;opacity:1';
+        var activeDownStyle='border:1px solid var(--red);color:var(--red);cursor:pointer;opacity:1';
+        var upStyle=canReact?activeUpStyle:(myReact&&myReact.type==='up'?'border:1px solid var(--green);color:var(--green);cursor:default;opacity:0.7':dimStyle);
+        var downStyle=canReact?activeDownStyle:(myReact&&myReact.type==='down'?'border:1px solid var(--red);color:var(--red);cursor:default;opacity:0.7':dimStyle);
+        var reactHtml='<div style="margin-top:8px;display:flex;align-items:center;gap:6px">'+
+          '<button class="bb-react-up" data-reactid="'+esc(String(p.id))+'" style="background:none;border-radius:16px;padding:4px 10px;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:4px;'+upStyle+'">\ud83d\udc4d'+(ups>0?' <span style="font-size:12px">'+ups+'</span>':'')+'</button>'+
+          '<button class="bb-react-down" data-reactid="'+esc(String(p.id))+'" style="background:none;border-radius:16px;padding:4px 10px;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:4px;'+downStyle+'">\ud83d\udc4e'+(downs>0?' <span style="font-size:12px">'+downs+'</span>':'')+'</button>'+
+        '</div>';
         html+='<div class="bb-post" style="position:relative;'+(p.pinned==='true'?'border-color:var(--gold);':'')+'border-color:'+(p.pinned==='true'?'rgba(198,151,63,.4)':'var(--border-bright)')+'" data-postid="'+esc(String(p.id))+'"><button class="bb-dots" data-dotid="'+esc(String(p.id))+'">\u22ee</button><div class="bb-meta"><span>'+pinnedBadge+'<span class="bb-serial">Posted by '+esc(String(p.authorSerial||'\u2014'))+'</span> \u00b7 '+esc(String(p.timestamp||''))+'</span></div><div class="bb-title">'+esc(String(p.title||''))+'</div><div class="bb-body bb-rte-body" style="border:none;padding:0;min-height:0">'+String(p.body||'')+'</div>'+editInfo+reactHtml+'<div class="bb-menu" data-menuid="'+esc(String(p.id))+'" style="display:none"><button class="bb-menu-edit" data-id="'+esc(String(p.id))+'" data-title="'+esc(String(p.title||''))+'">Edit</button><button class="bb-menu-del" data-id="'+esc(String(p.id))+'">Delete</button></div><div class="bb-slide-area" data-slideid="'+esc(String(p.id))+'" style="display:none"></div></div>';
       });
       el.innerHTML=html;
@@ -1284,8 +1292,9 @@ function render() {
         if(p.isDeleted)return;
         if(String(p.authorSerial)===mySerial||String(p.authorCid)===String(m.cid)){
           var reactions=[];try{reactions=JSON.parse(p.reactions||'[]');}catch(e){}
-          var total=0;reactions.forEach(function(r){total+=(r.count||1);});
-          if(total>0){myTotalReacts+=total;myPostsData.push({title:p.title,count:total});}
+          var ups=0,downs=0;reactions.forEach(function(r){if(r.type==='up')ups++;else if(r.type==='down')downs++;else ups+=(r.count||1);});
+          var total=ups+downs;
+          if(total>0){myTotalReacts+=total;myPostsData.push({title:p.title,ups:ups,downs:downs});}
         }
       });
       var badge=document.getElementById('bbReactBadge');
@@ -1304,9 +1313,8 @@ function render() {
           }
           var h='<div style="margin-bottom:12px;font-size:14px;font-weight:500;color:var(--gold)">Reactions on your posts</div>';
           myPostsData.forEach(function(p){
-            h+='<div style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--text)">'+esc(p.title)+'</span><span style="font-size:13px;color:var(--gold)">\ud83d\udc4d '+p.count+'</span></div>';
+            h+='<div style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--text)">'+esc(p.title)+'</span><span style="font-size:13px"><span style="color:var(--green)">\ud83d\udc4d '+p.ups+'</span> <span style="color:var(--red);margin-left:8px">\ud83d\udc4e '+p.downs+'</span></span></div>';
           });
-          h+='<div style="text-align:center;margin-top:16px;padding:10px;font-size:14px;font-weight:500;color:var(--gold)">Total: \ud83d\udc4d '+myTotalReacts+'</div>';
           h+='<div style="text-align:center;margin-top:12px"><button class="btn btn-gold" style="padding:8px 20px;font-size:13px" id="bbBackFromReacts">Back to Board</button></div>';
           el.innerHTML=h;
           document.getElementById('bbBackFromReacts').addEventListener('click',function(){setState({tab:'bulletin'});});
@@ -1332,21 +1340,28 @@ function render() {
       });
 
       // Wire reaction buttons
-      el.querySelectorAll('.bb-react').forEach(function(btn){
-        btn.addEventListener('click',function(){
-          var pid=btn.getAttribute('data-reactid');
-          if(btn.style.opacity==='0.5')return;
-          btn.style.opacity='0.5';btn.style.cursor='default';
-          apiCall('reactBulletin',{token:state.token,postId:pid,cid:m.cid}).then(function(res){
-            if(res.ok){
-              var countEl=btn.querySelector('span');
-              if(countEl)countEl.textContent=res.totalReactions;
-              else if(res.totalReactions>0){btn.innerHTML='\ud83d\udc4d <span style="font-size:12px">'+res.totalReactions+'</span>';}
-              btn.style.borderColor='var(--border)';btn.style.color='var(--text-muted)';
-            }
+      function wireReact(selector, type){
+        el.querySelectorAll(selector).forEach(function(btn){
+          btn.addEventListener('click',function(){
+            if(btn.style.opacity==='0.5')return;
+            var pid=btn.getAttribute('data-reactid');
+            btn.style.opacity='0.5';btn.style.cursor='default';
+            // Dim the other button too
+            var parent=btn.parentNode;
+            parent.querySelectorAll('button').forEach(function(b){b.style.opacity='0.5';b.style.cursor='default';});
+            apiCall('reactBulletin',{token:state.token,postId:pid,cid:m.cid,type:type}).then(function(res){
+              if(res.ok){
+                var upBtn=parent.querySelector('.bb-react-up');
+                var downBtn=parent.querySelector('.bb-react-down');
+                if(upBtn){upBtn.innerHTML='\ud83d\udc4d'+(res.ups>0?' <span style="font-size:12px">'+res.ups+'</span>':'');upBtn.style.borderColor=type==='up'?'var(--green)':'var(--border)';upBtn.style.color=type==='up'?'var(--green)':'var(--text-muted)';}
+                if(downBtn){downBtn.innerHTML='\ud83d\udc4e'+(res.downs>0?' <span style="font-size:12px">'+res.downs+'</span>':'');downBtn.style.borderColor=type==='down'?'var(--red)':'var(--border)';downBtn.style.color=type==='down'?'var(--red)':'var(--text-muted)';}
+              }
+            });
           });
         });
-      });
+      }
+      wireReact('.bb-react-up','up');
+      wireReact('.bb-react-down','down');
 
       // Wire edit from menu
       el.querySelectorAll('.bb-menu-edit').forEach(function(btn){
