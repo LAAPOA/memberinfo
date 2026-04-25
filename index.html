@@ -657,7 +657,7 @@ function render() {
         '<div class="field"><label>Date of Birth</label><input id="dob" type="date"></div>' +
         '<button class="btn btn-gold" id="loginBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Verifying...':'Sign In')+'</button>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     document.getElementById('loginBtn').addEventListener('click', handleLogin);
     ['ln','cid','dob'].forEach(id => {
       const el = document.getElementById(id);
@@ -699,7 +699,7 @@ function render() {
         '<div class="info-row"><span class="info-label">Address</span><span class="info-val" style="white-space:pre-line">'+(fmtAddr?esc(fmtAddr).replace(/\\n/g,'\n'):'—')+'</span></div>' +
         '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
     document.getElementById('editToggle').addEventListener('click', function(){setState({tab:'edit',error:'',success:''});});
@@ -724,7 +724,7 @@ function render() {
           (ds.countdownMs>0?'<div id="countdown" style="margin-top:20px;font-family:\'JetBrains Mono\',monospace;font-size:36px;color:var(--gold);letter-spacing:2px"></div><div style="font-size:11px;color:var(--text-muted);margin-top:6px">until access is restored</div>':'') +
         '</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
 
@@ -798,7 +798,7 @@ function render() {
         '<div class="search-input"><input id="searchQ" type="text" placeholder="Search by name or serial #..." value="'+esc(searchQuery)+'"><button class="btn btn-gold" id="searchBtn" style="width:auto;min-width:80px;margin-left:8px">Search</button></div>' +
         resultsHtml +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
     const sq = document.getElementById('searchQ');
@@ -846,7 +846,7 @@ function render() {
         tabBar('announce') +
         '<div id="annContent">'+annHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     // Load announcements and birthdays together
@@ -965,7 +965,7 @@ function render() {
         tabBar('events') +
         '<div id="eventsContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading events...</div></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     function loadEvents(){
@@ -1119,7 +1119,7 @@ function render() {
         tabBar('decide') +
         '<div id="decideContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading votes...</div></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     apiCall('getVotes',{token:state.token,mou:m.mou,cid:m.cid}).then(function(res){
@@ -1138,7 +1138,7 @@ function render() {
         html+='<div class="ann-title">'+esc(v.title)+'</div>';
         if(v.description)html+='<div class="ann-body" style="margin:6px 0">'+String(v.description)+'</div>';
         html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">';
-        html+=(v.type==='yesno'?'Yes/No':v.type==='ranked'?'Ranked Choice':'Multiple Choice');
+        html+=(v.type==='yesno'?'Yes/No':v.type==='ranked'?'Ranked Choice':v.type==='election'?'Election'+(v.seats>1?' ('+v.seats+' seats)':''):'Multiple Choice');
         html+=' \u00b7 '+total+' vote'+(total!==1?'s':'');
         if(v.deadline&&!isClosed){var dl=new Date(v.deadline);var secsLeft=Math.round((dl.getTime()-Date.now())/1000);if(secsLeft>0){var h=Math.floor(secsLeft/3600),mn=Math.floor((secsLeft%3600)/60);html+=' \u00b7 Closes in '+(h>0?h+'h ':'')+(mn>0?mn+'m':'<1m');}}
         if(isClosed)html+=' \u00b7 Closed';
@@ -1183,6 +1183,24 @@ function render() {
             });
             html+='</div>';
             html+='<button class="btn btn-gold vote-ranked-submit" data-vid="'+esc(v.id)+'" style="width:100%;padding:12px;font-size:15px;font-weight:600;margin-top:8px">Submit Ranking</button>';
+            html+='</div>';
+          }else if(v.type==='election'){
+            var cands=[];try{cands=JSON.parse(v.candidates||'[]');}catch(e){}
+            var numSeats=parseInt(v.seats)||1;
+            html+='<div class="vote-election" data-vid="'+esc(v.id)+'" data-seats="'+numSeats+'" style="margin-top:8px">';
+            html+='<div style="font-size:13px;color:var(--gold);margin-bottom:8px;font-weight:500">Select up to '+numSeats+' candidate'+(numSeats>1?'s':'')+'</div>';
+            html+='<div class="election-counter" data-vid="'+esc(v.id)+'" style="font-size:12px;color:var(--text-muted);margin-bottom:10px">'+numSeats+' remaining</div>';
+            cands.forEach(function(c){
+              html+='<div class="election-card" data-vid="'+esc(v.id)+'" data-name="'+esc(c.name)+'" style="display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:8px;background:var(--surface);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s">';
+              if(c.photo)html+='<img src="'+esc(c.photo)+'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--border)">';
+              else html+='<div style="width:56px;height:56px;border-radius:50%;background:var(--surface-raised,#1a2744);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--gold);flex-shrink:0;border:2px solid var(--border)">'+esc(c.name.charAt(0))+'</div>';
+              html+='<div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">'+esc(c.name)+'</div>';
+              if(c.bio)html+='<div style="font-size:12px;color:var(--text-muted);line-height:1.3;margin-top:2px">'+esc(c.bio)+'</div>';
+              html+='</div>';
+              html+='<div class="election-check" style="width:24px;height:24px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px"></div>';
+              html+='</div>';
+            });
+            html+='<button class="btn btn-gold vote-election-submit" data-vid="'+esc(v.id)+'" disabled style="width:100%;padding:12px;font-size:15px;font-weight:600;margin-top:8px;opacity:0.5">Select candidate'+(numSeats>1?'s':'')+' to vote</button>';
             html+='</div>';
           }
         }
@@ -1257,6 +1275,56 @@ function render() {
           });
         });
       });
+
+      // Wire election candidate cards
+      el.querySelectorAll('.election-card').forEach(function(card){
+        card.addEventListener('click',function(){
+          var vid=card.getAttribute('data-vid');
+          var container=el.querySelector('.vote-election[data-vid="'+vid+'"]');
+          var maxSeats=parseInt(container.getAttribute('data-seats'))||1;
+          var check=card.querySelector('.election-check');
+          var isSelected=check.textContent==='\u2713';
+
+          if(isSelected){
+            check.textContent='';check.style.background='transparent';check.style.borderColor='var(--border)';
+            card.style.borderColor='var(--border)';
+          }else{
+            var selected=container.querySelectorAll('.election-check');
+            var count=0;selected.forEach(function(c){if(c.textContent==='\u2713')count++;});
+            if(count>=maxSeats)return;
+            check.textContent='\u2713';check.style.background='var(--gold)';check.style.borderColor='var(--gold)';check.style.color='#0B1A33';
+            card.style.borderColor='var(--gold)';
+          }
+
+          // Update counter and submit button
+          var allChecks=container.querySelectorAll('.election-check');
+          var selCount=0;allChecks.forEach(function(c){if(c.textContent==='\u2713')selCount++;});
+          var remaining=maxSeats-selCount;
+          var counter=el.querySelector('.election-counter[data-vid="'+vid+'"]');
+          if(counter)counter.textContent=remaining>0?remaining+' remaining':'All '+maxSeats+' selected';
+          var submit=container.querySelector('.vote-election-submit');
+          if(submit){submit.disabled=selCount===0;submit.style.opacity=selCount>0?'1':'0.5';submit.textContent=selCount>0?'Cast Vote ('+selCount+' selected)':'Select candidate'+(maxSeats>1?'s':'')+' to vote';}
+        });
+      });
+
+      // Wire election submit
+      el.querySelectorAll('.vote-election-submit').forEach(function(btn){
+        btn.addEventListener('click',function(){
+          var vid=btn.getAttribute('data-vid');
+          var container=el.querySelector('.vote-election[data-vid="'+vid+'"]');
+          var selected=[];
+          container.querySelectorAll('.election-card').forEach(function(card){
+            var check=card.querySelector('.election-check');
+            if(check.textContent==='\u2713')selected.push(card.getAttribute('data-name'));
+          });
+          if(selected.length===0)return;
+          btn.disabled=true;btn.textContent='Submitting...';
+          apiCall('castVote',{token:state.token,voteId:vid,cid:m.cid,choice:selected}).then(function(res){
+            if(res.ok){setState({tab:'decide'});}
+            else{btn.disabled=false;btn.textContent='Cast Vote';if(res.error)alert(res.error);}
+          });
+        });
+      });
     }).catch(function(err){
       var el=document.getElementById('decideContent');
       if(el)el.innerHTML='<div class="err">Failed to load votes: '+esc(String(err))+'</div>';
@@ -1323,7 +1391,7 @@ function render() {
         '</div>' +
         '<div id="bbContent">'+bbHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     // Wire three-dot menu
     document.getElementById('bbMenuBtn').addEventListener('click',function(ev){
@@ -1692,7 +1760,7 @@ function render() {
         '<button class="btn btn-gold" id="saveBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Saving...':'Save Changes')+'</button>' +
       '</div>' +
     '</div>' +
-    '<div class="footer"><span style="opacity:.5">ver 1.0.3</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+    '<div class="footer"><span style="opacity:.5">ver 1.0.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
   document.getElementById('saveBtn').addEventListener('click', handleUpdate);
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
