@@ -580,6 +580,11 @@ async function doSearch() {
     if(res.error.includes('expired') || res.error.includes('session')){clearSession();return;}
     searchResults=[];
   } else if(res.ok){
+    if(res.optedOut){
+      el=document.getElementById('searchResults');
+      if(el)el.innerHTML='<div style="text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:12px">\ud83d\udd12</div><div style="font-size:14px;color:var(--gold);font-weight:500;margin-bottom:8px">Directory Access Restricted</div><div style="font-size:12px;color:var(--text-muted);line-height:1.5">You have opted out of the directory. Share your information in My Info to access the member directory.</div></div>';
+      return;
+    }
     searchResults=res.results||[];
   } else {
     searchResults=[];
