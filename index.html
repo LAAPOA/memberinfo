@@ -919,7 +919,12 @@ function render() {
     sq.addEventListener('input', function(){
       searchQuery=sq.value;
       if(searchTimer)clearTimeout(searchTimer);
-      if(searchQuery.trim().length<2){searchResults=[];setState({tab:'directory'});return;}
+      if(searchQuery.trim().length<2){
+        searchResults=[];
+        var el=document.getElementById('searchResults');
+        if(el)el.innerHTML='';
+        return;
+      }
       searchTimer=setTimeout(function(){doSearch();},300);
     });
     sq.focus();
