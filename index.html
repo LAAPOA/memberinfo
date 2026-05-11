@@ -572,10 +572,10 @@ function showLiveWheel(data){
 
 async function doSearch() {
   const q=searchQuery.trim();
-  if(q.length<2){searchResults=[];searchLoading=false;render();return;}
-  searchLoading=true;render();
+  if(q.length<2){searchResults=[];var el=document.getElementById('searchResults');if(el)el.innerHTML='';return;}
+  var el=document.getElementById('searchResults');
+  if(el)el.innerHTML='<div style="text-align:center;padding:20px"><div class="sl-dots"><span></span><span></span><span></span></div></div>';
   const res=await apiCall('search',{token:state.token,query:q});
-  searchLoading=false;
   if(res.error){
     if(res.error.includes('expired') || res.error.includes('session')){clearSession();return;}
     searchResults=[];
@@ -584,9 +584,67 @@ async function doSearch() {
   } else {
     searchResults=[];
   }
-  render();
-  var sq=document.getElementById('searchQ');
-  if(sq){sq.focus();sq.setSelectionRange(sq.value.length,sq.value.length);}
+  el=document.getElementById('searchResults');
+  if(!el)return;
+  if(searchResults.length===0){el.innerHTML='<div class="search-empty">No members found</div>';return;}
+  var m=state.member;
+  var canSeeMobile=true;
+  var smpMe=m.showMobilePhone;
+  if(smpMe===false||smpMe==='false'||smpMe==='FALSE'||smpMe==='no'||smpMe==='No'||smpMe==='0')canSeeMobile=false;
+  var html='';
+  searchResults.forEach(function(p,idx){
+    var pi=(p.name||'').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    var hasCity=!!p.cityCell;
+    var hasMobile=canSeeMobile&&!!p.mobilePhone&&!p.phoneMasked;
+    var hasMasked=!!p.phoneMasked&&!!p.mobilePhone;
+    var phonesHtml='';
+    if(hasCity)phonesHtml+='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">City Cell</span><a href="tel:'+esc(p.cityCell)+'">'+esc(fmtPhone(p.cityCell))+'</a></div>';
+    if(hasMobile)phonesHtml+='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">Mobile Phone</span><a href="tel:'+esc(p.mobilePhone)+'">'+esc(fmtPhone(p.mobilePhone))+'</a></div>';
+    if(hasMasked){
+      var maskedHtml='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">Mobile Phone</span><span style="font-family:monospace;font-size:14px">';
+      for(var ci=0;ci<p.mobilePhone.length;ci++){
+        if(p.mobilePhone[ci]==='~')maskedHtml+='<span style="filter:blur(4px);user-select:none;display:inline-block;width:8px;color:var(--text)">8</span>';
+        else maskedHtml+=esc(p.mobilePhone[ci]);
+      }
+      maskedHtml+='</span><div style="font-size:11px;color:var(--gold);background:rgba(198,151,63,.08);padding:4px 8px;border-radius:4px;margin-top:6px;text-align:center">Share your number to view full numbers</div></div>';
+      phonesHtml+=maskedHtml;
+    }
+    if(!phonesHtml)phonesHtml='<div class="sr-phone" style="color:var(--text-muted)">No phone listed</div>';
+    var callHtml='';
+    if(hasCity)callHtml+='<a href="tel:'+esc(p.cityCell)+'" class="sr-btn">Call City</a>';
+    if(hasMobile)callHtml+='<a href="tel:'+esc(p.mobilePhone)+'" class="sr-btn">Call Mobile</a>';
+    html+='<div class="sr-card" data-cidx="'+idx+'"><div class="sr-avatar">'+pi+'</div><div class="sr-info"><div class="sr-name">'+esc(p.name)+'</div><div class="sr-detail">'+esc(p.rank||'')+' \u00b7 '+esc(p.mou||'')+' \u00b7 #'+esc(p.serialNumber||'')+'</div>'+(p.assignment?'<div class="sr-detail">'+esc(p.assignment)+'</div>':'')+'</div></div>';
+  });
+  el.innerHTML=html;
+
+  // Wire card expansion
+  el.querySelectorAll('.sr-card').forEach(function(card){
+    card.addEventListener('click',function(){
+      var idx=parseInt(card.getAttribute('data-cidx'));
+      var expanded=card.querySelector('.sr-expanded');
+      if(expanded){expanded.remove();return;}
+      // Close other expanded cards
+      el.querySelectorAll('.sr-expanded').forEach(function(e){e.remove();});
+      var p=searchResults[idx];
+      if(!p)return;
+      var hasCity=!!p.cityCell;
+      var hasMobile=canSeeMobile&&!!p.mobilePhone&&!p.phoneMasked;
+      var hasMasked=!!p.phoneMasked&&!!p.mobilePhone;
+      var ph='';
+      if(hasCity)ph+='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">City Cell</span><a href="tel:'+esc(p.cityCell)+'">'+esc(fmtPhone(p.cityCell))+'</a></div>';
+      if(hasMobile)ph+='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">Mobile</span><a href="tel:'+esc(p.mobilePhone)+'">'+esc(fmtPhone(p.mobilePhone))+'</a></div>';
+      if(hasMasked){var mh='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">Mobile</span><span style="font-family:monospace;font-size:14px">';for(var ci=0;ci<p.mobilePhone.length;ci++){if(p.mobilePhone[ci]==='~')mh+='<span style="filter:blur(4px);user-select:none;display:inline-block;width:8px;color:var(--text)">8</span>';else mh+=esc(p.mobilePhone[ci]);}mh+='</span><div style="font-size:11px;color:var(--gold);background:rgba(198,151,63,.08);padding:4px 8px;border-radius:4px;margin-top:6px;text-align:center">Share your number to view full numbers</div></div>';ph+=mh;}
+      if(!ph)ph='<div class="sr-phone" style="color:var(--text-muted)">No phone listed</div>';
+      var callBtns='';
+      if(hasCity)callBtns+='<a href="tel:'+esc(p.cityCell)+'" class="sr-btn">Call City</a>';
+      if(hasMobile)callBtns+='<a href="tel:'+esc(p.mobilePhone)+'" class="sr-btn">Call Mobile</a>';
+      var div=document.createElement('div');
+      div.className='sr-expanded';
+      div.innerHTML='<div style="padding:12px 0;border-top:1px solid var(--border)">'+ph+'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'+callBtns+((!p.phoneMasked)?'<button class="sr-btn sr-vcard" data-vidx="'+idx+'">Save Contact</button>':'')+'</div></div>';
+      card.appendChild(div);
+      div.querySelectorAll('.sr-vcard').forEach(function(btn){btn.addEventListener('click',function(ev){ev.stopPropagation();saveContact(p);});});
+    });
+  });
 }
 
 function generateVCard(person) {
@@ -703,7 +761,7 @@ function render() {
         '<div class="field"><label>Date of Birth</label><input id="dob" type="date"></div>' +
         '<button class="btn btn-gold" id="loginBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Verifying...':'Sign In')+'</button>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.7</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     document.getElementById('loginBtn').addEventListener('click', handleLogin);
     ['ln','cid','dob'].forEach(id => {
       const el = document.getElementById(id);
@@ -745,7 +803,7 @@ function render() {
         '<div class="info-row"><span class="info-label">Address</span><span class="info-val" style="white-space:pre-line">'+(fmtAddr?esc(fmtAddr).replace(/\\n/g,'\n'):'—')+'</span></div>' +
         '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.7</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
     document.getElementById('editToggle').addEventListener('click', function(){setState({tab:'edit',error:'',success:''});});
@@ -770,7 +828,7 @@ function render() {
           (ds.countdownMs>0?'<div id="countdown" style="margin-top:20px;font-family:\'JetBrains Mono\',monospace;font-size:36px;color:var(--gold);letter-spacing:2px"></div><div style="font-size:11px;color:var(--text-muted);margin-top:6px">until access is restored</div>':'') +
         '</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.7</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
 
@@ -851,9 +909,9 @@ function render() {
         '</div>' +
         tabBar('directory') +
         '<div class="search-input"><input id="searchQ" type="text" placeholder="Search by name or serial #..." value="'+esc(searchQuery)+'" autocomplete="off"></div>' +
-        resultsHtml +
+        '<div id="searchResults">' + resultsHtml + '</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.7</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
     const sq = document.getElementById('searchQ');
@@ -906,7 +964,7 @@ function render() {
         tabBar('announce') +
         '<div id="annContent">'+annHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.7</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     // Load announcements and birthdays together
@@ -1025,7 +1083,7 @@ function render() {
         tabBar('events') +
         '<div id="eventsContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading events...</div></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.7</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     function loadEvents(){
@@ -1179,7 +1237,7 @@ function render() {
         tabBar('decide') +
         '<div id="decideContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading votes...</div></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.7</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     apiCall('getVotes',{token:state.token,mou:m.mou,cid:m.cid}).then(function(res){
@@ -1451,7 +1509,7 @@ function render() {
         '</div>' +
         '<div id="bbContent">'+bbHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.7</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     // Wire three-dot menu
     document.getElementById('bbMenuBtn').addEventListener('click',function(ev){
@@ -1820,7 +1878,7 @@ function render() {
         '<button class="btn btn-gold" id="saveBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Saving...':'Save Changes')+'</button>' +
       '</div>' +
     '</div>' +
-    '<div class="footer"><span style="opacity:.5">ver 1.0.7</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+    '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
   document.getElementById('saveBtn').addEventListener('click', handleUpdate);
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
