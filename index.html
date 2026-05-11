@@ -617,32 +617,14 @@ async function doSearch() {
   });
   el.innerHTML=html;
 
-  // Wire card expansion
+  // Wire card expansion — use overlay card
   el.querySelectorAll('.sr-card').forEach(function(card){
     card.addEventListener('click',function(){
       var idx=parseInt(card.getAttribute('data-cidx'));
-      var expanded=card.querySelector('.sr-expanded');
-      if(expanded){expanded.remove();return;}
-      // Close other expanded cards
-      el.querySelectorAll('.sr-expanded').forEach(function(e){e.remove();});
-      var p=searchResults[idx];
-      if(!p)return;
-      var hasCity=!!p.cityCell;
-      var hasMobile=canSeeMobile&&!!p.mobilePhone&&!p.phoneMasked;
-      var hasMasked=!!p.phoneMasked&&!!p.mobilePhone;
-      var ph='';
-      if(hasCity)ph+='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">City Cell</span><a href="tel:'+esc(p.cityCell)+'">'+esc(fmtPhone(p.cityCell))+'</a></div>';
-      if(hasMobile)ph+='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">Mobile</span><a href="tel:'+esc(p.mobilePhone)+'">'+esc(fmtPhone(p.mobilePhone))+'</a></div>';
-      if(hasMasked){var mh='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">Mobile</span><span style="font-family:monospace;font-size:14px">';for(var ci=0;ci<p.mobilePhone.length;ci++){if(p.mobilePhone[ci]==='~')mh+='<span style="filter:blur(4px);user-select:none;display:inline-block;width:8px;color:var(--text)">8</span>';else mh+=esc(p.mobilePhone[ci]);}mh+='</span><div style="font-size:11px;color:var(--gold);background:rgba(198,151,63,.08);padding:4px 8px;border-radius:4px;margin-top:6px;text-align:center">Share your number to view full numbers</div></div>';ph+=mh;}
-      if(!ph)ph='<div class="sr-phone" style="color:var(--text-muted)">No phone listed</div>';
-      var callBtns='';
-      if(hasCity)callBtns+='<a href="tel:'+esc(p.cityCell)+'" class="sr-btn">Call City</a>';
-      if(hasMobile)callBtns+='<a href="tel:'+esc(p.mobilePhone)+'" class="sr-btn">Call Mobile</a>';
-      var div=document.createElement('div');
-      div.className='sr-expanded';
-      div.innerHTML='<div style="padding:12px 0;border-top:1px solid var(--border)">'+ph+'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'+callBtns+((!p.phoneMasked)?'<button class="sr-btn sr-vcard" data-vidx="'+idx+'">Save Contact</button>':'')+'</div></div>';
-      card.appendChild(div);
-      div.querySelectorAll('.sr-vcard').forEach(function(btn){btn.addEventListener('click',function(ev){ev.stopPropagation();saveContact(p);});});
+      if(searchResults[idx]){
+        expandedContact=searchResults[idx];
+        renderExpandedCard();
+      }
     });
   });
 }
@@ -938,36 +920,14 @@ function render() {
       });
     });
 
-    var canSeeMobile=true;
-    var smpMe=m.showMobilePhone;
-    if(smpMe===false||smpMe==='false'||smpMe==='FALSE'||smpMe==='no'||smpMe==='No'||smpMe==='0')canSeeMobile=false;
-
-    // Wire card tap to expand
+    // Wire card tap to expand (full overlay card)
     document.querySelectorAll('.sr-card').forEach(card=>{
       card.addEventListener('click', ()=>{
-        var idx=parseInt(card.getAttribute('data-cidx'));
-        var expanded=card.querySelector('.sr-expanded');
-        if(expanded){expanded.remove();return;}
-        document.querySelectorAll('.sr-expanded').forEach(function(e){e.remove();});
-        var p=searchResults[idx];
-        if(!p)return;
-        var hasCity=!!p.cityCell;
-        var hasMobile=canSeeMobile&&!!p.mobilePhone&&!p.phoneMasked;
-        var hasMasked=!!p.phoneMasked&&!!p.mobilePhone;
-        var ph='';
-        if(hasCity)ph+='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">City Cell</span><a href="tel:'+esc(p.cityCell)+'">'+esc(fmtPhone(p.cityCell))+'</a></div>';
-        if(hasMobile)ph+='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">Mobile</span><a href="tel:'+esc(p.mobilePhone)+'">'+esc(fmtPhone(p.mobilePhone))+'</a></div>';
-        if(hasMasked){var mh='<div class="sr-phone"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block">Mobile</span><span style="font-family:monospace;font-size:14px">';for(var ci=0;ci<p.mobilePhone.length;ci++){if(p.mobilePhone[ci]==='~')mh+='<span style="filter:blur(4px);user-select:none;display:inline-block;width:8px;color:var(--text)">8</span>';else mh+=esc(p.mobilePhone[ci]);}mh+='</span><div style="font-size:11px;color:var(--gold);background:rgba(198,151,63,.08);padding:4px 8px;border-radius:4px;margin-top:6px;text-align:center">Share your number to view full numbers</div></div>';ph+=mh;}
-        if(!ph)ph='<div class="sr-phone" style="color:var(--text-muted)">No phone listed</div>';
-        var callBtns='';
-        if(hasCity)callBtns+='<a href="tel:'+esc(p.cityCell)+'" class="sr-btn">Call City</a>';
-        if(hasMobile)callBtns+='<a href="tel:'+esc(p.mobilePhone)+'" class="sr-btn">Call Mobile</a>';
-        var div=document.createElement('div');
-        div.className='sr-expanded';
-        div.innerHTML='<div style="padding:12px 0;border-top:1px solid var(--border)">'+ph+'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'+callBtns+((!p.phoneMasked)?'<button class="sr-btn sr-vcard" data-vidx="'+idx+'">Save Contact</button>':'')+'</div></div>';
-        card.appendChild(div);
-        div.querySelectorAll('.sr-vcard').forEach(function(btn){btn.addEventListener('click',function(ev){ev.stopPropagation();saveContact(p);});});
-        div.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(ev){ev.stopPropagation();});});
+        const idx=parseInt(card.getAttribute('data-cidx'));
+        if(searchResults[idx]){
+          expandedContact=searchResults[idx];
+          renderExpandedCard();
+        }
       });
     });
 
@@ -2136,10 +2096,9 @@ function renderExpandedCard() {
 
   var p = expandedContact;
   var pi = (p.name||'').split(' ').map(function(w){return w[0];}).filter(Boolean).slice(0,2).join('').toUpperCase();
-  var ds = getDirectoryStatus(state.member);
-  var canSeeMobile = !ds.mobileBlocked;
   var hasCity = !!p.cityCell;
-  var hasMobile = canSeeMobile && !!p.mobilePhone;
+  var hasMobile = !!p.mobilePhone && !p.phoneMasked;
+  var hasMasked = !!p.phoneMasked && !!p.mobilePhone;
 
   var phonesHtml = '';
   if (hasCity) {
@@ -2148,7 +2107,16 @@ function renderExpandedCard() {
   if (hasMobile) {
     phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">Mobile Phone</div><div class="cf-phone-num"><a href="tel:'+esc(p.mobilePhone)+'">'+esc(fmtPhone(p.mobilePhone))+'</a></div><div class="cf-phone-hint">Tap number to dial</div></div>';
   }
-  if (!hasCity && !hasMobile) {
+  if (hasMasked) {
+    var maskedNum = '<span style="font-family:\'JetBrains Mono\',monospace;font-size:22px">';
+    for(var ci=0;ci<p.mobilePhone.length;ci++){
+      if(p.mobilePhone[ci]==='~') maskedNum+='<span style="filter:blur(4px);user-select:none;display:inline-block;width:12px;color:var(--gold-light)">8</span>';
+      else maskedNum+=esc(p.mobilePhone[ci]);
+    }
+    maskedNum+='</span>';
+    phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">Mobile Phone</div><div class="cf-phone-num">'+maskedNum+'</div><div style="font-size:11px;color:var(--gold);background:rgba(198,151,63,.08);padding:6px 10px;border-radius:6px;margin-top:8px;text-align:center">Share your number to view full numbers</div></div>';
+  }
+  if (!hasCity && !hasMobile && !hasMasked) {
     phonesHtml += '<div class="cf-phone"><div class="cf-phone-label">Phone</div><div class="cf-phone-num" style="color:var(--text-muted);font-size:14px">No phone available</div></div>';
   }
 
@@ -2178,7 +2146,7 @@ function renderExpandedCard() {
         '</div>' +
       '</div>' +
       '<div class="cf-actions">' +
-        '<button class="cf-btn cf-btn-add" id="cfAdd">Add to Contacts</button>' +
+        (hasMasked?'':'<button class="cf-btn cf-btn-add" id="cfAdd">Add to Contacts</button>') +
       '</div>' +
     '</div>';
 
@@ -2194,9 +2162,8 @@ function renderExpandedCard() {
     if (ev.target === overlay) closeCard();
   });
   document.getElementById('cfCloseBtn').addEventListener('click', closeCard);
-  document.getElementById('cfAdd').addEventListener('click', function() {
-    saveContact(p);
-  });
+  var addBtn = document.getElementById('cfAdd');
+  if(addBtn) addBtn.addEventListener('click', function() { saveContact(p); });
 
   // 60-second countdown ring + auto-close
   var ring = document.getElementById('cfRing');
