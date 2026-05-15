@@ -1013,7 +1013,12 @@ function render() {
       var announcementOrder = annRes.announcementOrder || [];
       var videoUrl = annRes.videoUrl || '';
       var videoEnabled = annRes.videoEnabled || false;
-      var mouwishEnabled = annRes.mouwishEnabled || false;
+      var mouwishEnabled = false;
+      try {
+        var mcRes = await fetch('https://mouwish-api.mike-a78.workers.dev/api/config');
+        var mc = await mcRes.json();
+        if (mc && mc.ok) mouwishEnabled = mc.enabled || false;
+      } catch (e) {}
 
       if (posts.length === 0 && !bdayHtml && !videoEnabled) {
         el.innerHTML = '<div class="search-empty">No announcements yet</div>';
