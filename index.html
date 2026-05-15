@@ -985,7 +985,7 @@ function render() {
       annPromise = apiCall('getAnnouncements',{token:state.token});
     }
 
-    Promise.all([bdayPromise, annPromise]).then(function(results){
+    Promise.all([bdayPromise, annPromise]).then(async function(results){
       var bdayRes = results[0];
       var annRes = results[1];
       var el = document.getElementById('annContent');
