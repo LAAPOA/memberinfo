@@ -1044,8 +1044,7 @@ function render() {
       var mouwishHtml = mouwishEnabled ? ('<div class="ann-post" style="padding:0;overflow:hidden">' +
         '<div class="ann-title" style="padding:14px 16px 6px;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">\ud83d\udccb MOU Wish List<a href="https://shortadrs.com/wish" target="_blank" rel="noopener" style="font-size:10px;background:rgba(198,151,63,.15);color:var(--gold);padding:2px 8px;border-radius:10px;font-weight:600;letter-spacing:.5px;text-decoration:none">SUBMIT YOURS</a></div>' +
         '<div style="font-size:12px;color:var(--text-muted);padding:0 16px 10px;line-height:1.4">Member proposals for the next contract. React with \ud83d\udc4d or \ud83d\udc4e to signal support.</div>' +
-        '<iframe src="https://laapoa.github.io/mouwish/viewer/?inapp=1&cid='+encodeURIComponent(m.cid||'')+'" style="width:100%;height:600px;border:none;display:block;background:var(--navy)" loading="eager"></iframe>' +
-      '</div>') : '';
+'<iframe id="mouwishIframe" src="https://laapoa.github.io/mouwish/viewer/?inapp=1" style="width:100%;height:600px;border:none;display:block;background:var(--navy)" loading="eager"></iframe>' +      '</div>') : '';
 
       // Build ordered output from JSON order
       var allItems = [];
