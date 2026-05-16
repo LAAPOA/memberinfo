@@ -1069,8 +1069,26 @@ function render() {
         if (mouwishHtml) allItems.push(mouwishHtml);
       }
 
-      el.innerHTML = allItems.join('');
+el.innerHTML = allItems.join('');
       if (bdayHtml) startCelebration();
+
+      // === MOU Wish List auth relay ===
+      var mwIfr = document.getElementById('mouwishIframe');
+      if (mwIfr) {
+        var sendMwAuth = function() {
+          if (!mwIfr.contentWindow) return;
+          mwIfr.contentWindow.postMessage({
+            type: 'mw-auth',
+            cid: (state.member && state.member.cid) || '',
+            mou: (state.member && state.member.mou) || '',
+            token: state.token || ''
+          }, 'https://laapoa.github.io');
+        };
+        mwIfr.addEventListener('load', sendMwAuth);
+        setTimeout(sendMwAuth, 1500);
+        setTimeout(sendMwAuth, 4000);
+        window.sendMouwishAuth = sendMwAuth;
+      }
     }).catch(function(err){
       var el=document.getElementById('annContent');
       if(el)el.innerHTML='<div class="err">Failed to load announcements. Please try again.</div>';
