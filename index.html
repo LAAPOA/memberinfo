@@ -985,7 +985,7 @@ function render() {
       annPromise = apiCall('getAnnouncements',{token:state.token});
     }
 
-    Promise.all([bdayPromise, annPromise]).then(async function(results){
+    Promise.all([bdayPromise, annPromise]).then(function(results){
       var bdayRes = results[0];
       var annRes = results[1];
       var el = document.getElementById('annContent');
@@ -1013,12 +1013,6 @@ function render() {
       var announcementOrder = annRes.announcementOrder || [];
       var videoUrl = annRes.videoUrl || '';
       var videoEnabled = annRes.videoEnabled || false;
-      var mouwishEnabled = false;
-      try {
-        var mcRes = await fetch('https://mouwish-api.mike-a78.workers.dev/api/config');
-        var mc = await mcRes.json();
-        if (mc && mc.ok) mouwishEnabled = mc.enabled || false;
-      } catch (e) {}
 
       if (posts.length === 0 && !bdayHtml && !videoEnabled) {
         el.innerHTML = '<div class="search-empty">No announcements yet</div>';
@@ -1040,55 +1034,28 @@ function render() {
         videoHtml = '<div style="background:var(--navy);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px"><div style="position:relative;padding-bottom:56.25%;height:0"><iframe src="'+esc(embedUrl)+'" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div></div>';
       }
 
-      // Build MOU Wish List iframe HTML (only if admin enabled it)
-      var mouwishHtml = mouwishEnabled ? ('<div class="ann-post" style="padding:0;overflow:hidden">' +
-        '<div class="ann-title" style="padding:14px 16px 6px;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">\ud83d\udccb MOU Wish List<a href="https://shortadrs.com/wish" target="_blank" rel="noopener" style="font-size:10px;background:rgba(198,151,63,.15);color:var(--gold);padding:2px 8px;border-radius:10px;font-weight:600;letter-spacing:.5px;text-decoration:none">SUBMIT YOURS</a></div>' +
-        '<div style="font-size:12px;color:var(--text-muted);padding:0 16px 10px;line-height:1.4">Member proposals for the next contract. React with \ud83d\udc4d or \ud83d\udc4e to signal support.</div>' +
-'<iframe id="mouwishIframe" src="https://laapoa.github.io/mouwish/viewer/?inapp=1" style="width:100%;height:600px;border:none;display:block;background:var(--navy)" loading="eager"></iframe>' +      '</div>') : '';
-
       // Build ordered output from JSON order
       var allItems = [];
       if (announcementOrder.length > 0) {
-         announcementOrder.forEach(function(id){
+        announcementOrder.forEach(function(id){
           if (id === 'BIRTHDAYS' && bdayHtml) allItems.push(bdayHtml);
           else if (id === 'VIDEO' && videoHtml) allItems.push(videoHtml);
-          else if (id === 'MOUWISH_VIEWER' && mouwishHtml) allItems.push(mouwishHtml);
           else if (postMap[id]) { allItems.push(postMap[id]); delete postMap[id]; }
         });
         // Add any posts not in order (newly created)
         Object.values(postMap).forEach(function(h){ allItems.push(h); });
-    // Ensure birthday/video/mouwish show if not in order
+        // Ensure birthday/video show if not in order
         if (bdayHtml && announcementOrder.indexOf('BIRTHDAYS') < 0) allItems.unshift(bdayHtml);
         if (videoHtml && announcementOrder.indexOf('VIDEO') < 0) allItems.push(videoHtml);
-        if (mouwishHtml && announcementOrder.indexOf('MOUWISH_VIEWER') < 0) allItems.push(mouwishHtml);
       } else {
-        // No saved order — default: birthday, video, posts, mouwish
+        // No saved order — default: birthday, video, posts
         if (bdayHtml) allItems.push(bdayHtml);
         if (videoHtml) allItems.push(videoHtml);
         posts.forEach(function(p){ allItems.push(postMap[String(p.id)] || ''); });
-        if (mouwishHtml) allItems.push(mouwishHtml);
       }
 
-el.innerHTML = allItems.join('');
+      el.innerHTML = allItems.join('');
       if (bdayHtml) startCelebration();
-
-      // === MOU Wish List auth relay ===
-      var mwIfr = document.getElementById('mouwishIframe');
-      if (mwIfr) {
-        var sendMwAuth = function() {
-          if (!mwIfr.contentWindow) return;
-          mwIfr.contentWindow.postMessage({
-            type: 'mw-auth',
-            cid: (state.member && state.member.cid) || '',
-            mou: (state.member && state.member.mou) || '',
-            token: state.token || ''
-          }, 'https://laapoa.github.io');
-        };
-        mwIfr.addEventListener('load', sendMwAuth);
-        setTimeout(sendMwAuth, 1500);
-        setTimeout(sendMwAuth, 4000);
-        window.sendMouwishAuth = sendMwAuth;
-      }
     }).catch(function(err){
       var el=document.getElementById('annContent');
       if(el)el.innerHTML='<div class="err">Failed to load announcements. Please try again.</div>';
@@ -2070,9 +2037,10 @@ function runWheelReplay(gid, entries, winnerName) {
 
   var arc = (Math.PI * 2) / n;
   var targetAngle = Math.PI * 1.5 - (winWheelIdx * arc + arc / 2);
-  var fullSpins = Math.PI * 2 * (14 + Math.random() * 4);
-  var totalRotation = fullSpins + (targetAngle % (Math.PI * 2));
-  if (totalRotation < fullSpins) totalRotation += Math.PI * 2;
+  var normalizedTarget = ((targetAngle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+  var extraSpins = 14 + Math.floor(Math.random() * 4); // integer number of full rotations only
+  var fullSpins = Math.PI * 2 * extraSpins;
+  var totalRotation = fullSpins + normalizedTarget;
 
   var angle = 0;
   function drawWheel() {
@@ -2219,14 +2187,17 @@ function renderExpandedCard() {
 
 render();
 
-// Register service worker (handles pre-cache of MOU wishlist + offline)
+// Force update service worker and clear old caches
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js').then(function(reg) {
-      // Check for SW updates on each page load
-      reg.update().catch(function(){});
-    }).catch(function(){});
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    registrations.forEach(function(r) { r.unregister(); });
   });
+  caches.keys().then(function(names) {
+    names.forEach(function(name) { caches.delete(name); });
+  });
+  setTimeout(function() {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }, 1000);
 }
 </script>
 </body>
