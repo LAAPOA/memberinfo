@@ -747,6 +747,7 @@ function render() {
         '<div class="field"><label>City Employee ID (CID)</label><input id="cid" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Your CID number"></div>' +
         '<div class="field"><label>Date of Birth</label><input id="dob" type="date"></div>' +
         '<button class="btn btn-gold" id="loginBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Verifying...':'Sign In')+'</button>' +
+      '<div style="text-align:center;margin-top:18px;font-size:13px;color:var(--text-dim);line-height:1.5">Not a member yet? Submit your enrollment <a href="https://laapoa.github.io/Join_membership/" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline">here</a> to have your eligibility evaluated.</div>' +
       '</div>' +
       '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     document.getElementById('loginBtn').addEventListener('click', handleLogin);
