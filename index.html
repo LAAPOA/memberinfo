@@ -1193,11 +1193,13 @@ function render() {
             var drawTime=parseInt(el.getAttribute('data-drawtime'));
             var secsLeft=Math.round((drawTime-Date.now())/1000);
             if(secsLeft<=0){el.textContent='Drawing now...';return;}
-            var h=Math.floor(secsLeft/3600);
+            var d=Math.floor(secsLeft/86400);
+            var h=Math.floor((secsLeft%86400)/3600);
             var m=Math.floor((secsLeft%3600)/60);
             var s=secsLeft%60;
             var txt='Drawing in ';
-            if(h>0)txt+=h+'h '+m+'m '+s+'s';
+            if(d>0)txt+=d+(d===1?' day ':' days ')+h+'h '+m+'m '+s+'s';
+            else if(h>0)txt+=h+'h '+m+'m '+s+'s';
             else if(m>0)txt+=m+'m '+s+'s';
             else txt+=s+'s';
             el.textContent=txt;
