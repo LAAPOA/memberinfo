@@ -1145,6 +1145,9 @@ function render() {
             html+='<div style="text-align:center;padding:8px;font-size:13px;color:var(--text-muted)">This giveaway has ended</div>';
           } else if(isEntered){
             html+='<div style="text-align:center;padding:10px;background:rgba(39,174,96,.1);border-radius:8px;font-size:14px;color:var(--green);font-weight:500">\u2705 You are entered!</div>';
+                    } else if(g.blocked){
+            html+='<button class="btn btn-gold" disabled style="width:100%;padding:12px;font-size:15px;font-weight:600;opacity:.4;cursor:not-allowed">Enter Me</button>';
+            html+='<div style="margin-top:10px;padding:12px;background:rgba(198,151,63,.08);border-radius:8px;font-size:13px;color:var(--text-dim);line-height:1.5;text-align:center">Our records indicate you have already won a drawing in this event type this season. Please check back next season.</div>';
           } else {
             html+='<button class="btn btn-gold gw-enter" data-gid="'+esc(String(g.id))+'" style="width:100%;padding:12px;font-size:15px;font-weight:600">Enter Me</button>';
           }
