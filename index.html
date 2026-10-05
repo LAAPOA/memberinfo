@@ -30,6 +30,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .field{margin-bottom:16px}
 .field label{display:block;font-size:12px;font-weight:500;color:var(--text-dim);margin-bottom:4px}
 .field input,.field select{width:100%;background:var(--navy);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;color:var(--text);font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none}
+.field input[type=date]{-webkit-appearance:auto;appearance:auto;min-height:46px;cursor:pointer}
+.field input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.8);cursor:pointer;opacity:.8}
 .field input:focus,.field select:focus{border-color:var(--gold)}
 .field input[readonly]{opacity:.6;cursor:default}
 .field select{cursor:pointer}
@@ -751,6 +753,8 @@ function render() {
       '</div>' +
       '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     document.getElementById('loginBtn').addEventListener('click', handleLogin);
+        var dobEl=document.getElementById('dob');
+    if(dobEl){dobEl.addEventListener('click',function(){try{dobEl.showPicker();}catch(e){}});}
     ['ln','cid','dob'].forEach(id => {
       const el = document.getElementById(id);
       if(el) el.addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(e); });
