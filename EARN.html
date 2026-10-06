@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LAAPOA Pay Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#13294B; --paper:#F4F6F9; --card:#FFFFFF; --rule:#CCD5E1; --muted:#5B6B82;
+  --amber:#E8A317; --amber-ink:#5A3D00; --pen:#2E7D5B; --cash:#8A5A00; --field:#FFFFFF;
+  --font:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --cond:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#E6ECF5; --paper:#0E1726; --card:#16233A; --rule:#2A3B57; --muted:#93A3BB;
+    --amber:#F2B530; --amber-ink:#2A1C00; --pen:#5CC096; --cash:#E9B85C; --field:#0F1A2C;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E6ECF5; --paper:#0E1726; --card:#16233A; --rule:#2A3B57; --muted:#93A3BB;
+  --amber:#F2B530; --amber-ink:#2A1C00; --pen:#5CC096; --cash:#E9B85C; --field:#0F1A2C;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.45}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:16px 16px 96px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+h1{font-family:var(--cond);font-weight:700;font-size:1.75rem;line-height:1.1;margin:0;letter-spacing:.01em}
+.sub{color:var(--muted);font-size:.9rem;margin:2px 0 0}
+.mous{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:2px solid var(--ink);border-radius:10px;overflow:hidden;width:100%;margin-bottom:16px}
+.mous button{background:var(--card);border:0;border-left:2px solid var(--ink);padding:10px 4px;cursor:pointer;text-align:center}
+.mous button:first-child{border-left:0}
+.mous b{display:block;font-family:var(--cond);font-size:1.25rem;line-height:1}
+.mous span{display:block;font-size:.75rem;color:var(--muted);margin-top:3px}
+.mous button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink)}
+.mous button[aria-pressed="true"] span{color:var(--amber-ink)}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:900px){.grid{grid-template-columns:minmax(0,1fr) 400px}.stubcol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);align-self:start}}
+section.panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+h2{font-family:var(--cond);font-size:1.15rem;font-weight:600;margin:0 0 10px}
+label.f{display:block;font-size:.85rem;color:var(--muted);margin:10px 0 4px}
+select,input[type=number]{width:100%;background:var(--field);border:1px solid var(--rule);border-radius:8px;padding:10px;min-height:44px}
+.steps{display:flex;flex-wrap:wrap;gap:6px}
+.steps button{min-width:44px;min-height:44px;border:1px solid var(--rule);background:var(--field);border-radius:8px;cursor:pointer;font-weight:600}
+.steps button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.rate{font-size:.85rem;color:var(--muted);margin-top:8px}
+.checks{display:grid;gap:4px}
+.ck{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-radius:8px;cursor:pointer}
+.ck:hover{background:color-mix(in srgb,var(--rule) 30%,transparent)}
+.ck input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--ink);flex:none}
+.ck .t{flex:1}
+.ck small{display:block;color:var(--muted);font-size:.8rem}
+.tag{font-size:.72rem;font-weight:600;padding:1px 6px;border-radius:4px;border:1px solid currentColor;white-space:nowrap;margin-left:4px}
+.tag.atr{color:var(--pen)} .tag.atp{color:var(--cash)}
+.sel{padding:6px 6px 8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.note{font-size:.8rem;color:var(--muted);margin:8px 0 0}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+/* the stub */
+.stub{background:var(--card);border:2px solid var(--ink);border-radius:4px;font-variant-numeric:tabular-nums;position:relative}
+.stub::before{content:"";display:block;height:10px;background:repeating-linear-gradient(90deg,var(--ink) 0 10px,transparent 10px 16px)}
+.stub .hd{padding:12px 16px 8px;border-bottom:1px dashed var(--rule)}
+.stub .hd h2{margin:0;font-size:1.1rem}
+.stub .hd p{margin:2px 0 0;font-size:.82rem;color:var(--muted)}
+.big{display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid var(--ink)}
+.big div{padding:12px 16px}
+.big div+div{border-left:1px dashed var(--rule)}
+.big small{display:block;font-size:.78rem;color:var(--muted)}
+.big strong{display:block;font-family:var(--cond);font-size:1.9rem;line-height:1.1;font-weight:700}
+.blk{padding:8px 16px 10px;border-bottom:1px dashed var(--rule)}
+.blk:last-child{border-bottom:0}
+.blk h3{font-family:var(--cond);font-size:.95rem;font-weight:600;margin:4px 0 4px;color:var(--muted)}
+.row{display:flex;justify-content:space-between;gap:10px;padding:3px 0;font-size:.92rem}
+.row span:first-child{flex:1;min-width:0}
+.row .p{font-size:.72rem;margin-left:6px}
+.row .p.y{color:var(--pen)} .row .p.n{color:var(--cash)}
+.row.tot{font-weight:600;border-top:1px solid var(--rule);margin-top:4px;padding-top:6px}
+.row.grand{font-family:var(--cond);font-size:1.15rem;font-weight:700}
+.empty{color:var(--muted);font-size:.88rem;padding:2px 0}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--ink);color:var(--paper);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:5}
+.bar b{font-family:var(--cond);font-size:1.3rem}
+.bar small{display:block;font-size:.72rem;opacity:.75}
+.bar a{color:var(--paper);font-weight:600;text-decoration:underline}
+@media (min-width:900px){.bar{display:none}.wrap{padding-bottom:24px}}
+footer{font-size:.78rem;color:var(--muted);margin-top:14px}
+@media (prefers-reduced-motion:no-preference){.big strong{transition:color .2s}}
+/* embedded in member app (EARN tab) */
+html:root.embed{--ink:#E8E8EC;--paper:#0F1F38;--card:#0B1A33;--rule:#24395A;--muted:#8A8FA0;--amber:#C6973F;--amber-ink:#0B1A33;--pen:#27AE60;--cash:#D4AD5E;--field:#0B1A33;
+  --font:"DM Sans",system-ui,-apple-system,sans-serif;--cond:"DM Sans",system-ui,-apple-system,sans-serif;padding:0}
+html.embed body{background:transparent}
+html.embed .wrap{padding:0}
+html.embed header,html.embed .bar{display:none}
+html.embed .mous{border-color:var(--amber)}
+html.embed .mous button{border-left-color:var(--amber)}
+html.embed .stub{border-color:var(--amber)}
+html.embed .stub::before{background:repeating-linear-gradient(90deg,var(--amber) 0 10px,transparent 10px 16px)}
+html.embed .big{border-bottom-color:var(--amber)}
+html.embed .steps button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink);border-color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>LAAPOA Pay Calculator</h1>
+      <p class="sub">Appendix C rates (June 30, 2024). 2025 and 2026 appendices are cancelled.</p>
+    </div>
+  </header>
+
+  <nav class="mous" id="mous" aria-label="Choose MOU"></nav>
+
+  <div class="grid">
+    <main>
+      <section class="panel">
+        <h2>Position</h2>
+        <label class="f" for="cls">Classification</label>
+        <select id="cls"></select>
+        <label class="f">Salary step</label>
+        <div class="steps" id="steps" role="group" aria-label="Salary step"></div>
+        <p class="rate" id="baseline"></p>
+        <div id="yrsWrap">
+          <label class="f" for="yrs">Years of service</label>
+          <input type="number" id="yrs" min="0" max="45" step="1" inputmode="numeric" value="0">
+        </div>
+      </section>
+
+      <section class="panel" id="assignPanel">
+        <h2>Assignment</h2>
+        <select id="assign"></select>
+        <div id="assignSub"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Certificates and pay notes</h2>
+        <div class="checks" id="checks"></div>
+      </section>
+
+      <section class="panel">
+        <h2>This pay period</h2>
+        <div class="two" id="extras"></div>
+        <p class="note" id="otRule"></p>
+      </section>
+    </main>
+
+    <aside class="stubcol" id="stubAnchor">
+      <div class="stub" aria-live="polite">
+        <div class="hd"><h2 id="stubTitle">Earnings estimate</h2><p id="stubSub"></p></div>
+        <div class="big">
+          <div><small>Regular hourly rate</small><strong id="kRate">$0.00</strong></div>
+          <div><small>Biweekly gross</small><strong id="kBW">$0.00</strong></div>
+        </div>
+        <div id="stubBody"></div>
+      </div>
+      <footer>Estimate only. Adds to Rate items raise the hourly rate used for overtime; Adds to Pay items are flat cash. Pensionable status follows each MOU's own wording. Annual figures use the City's 2,088-hour year.</footer>
+    </aside>
+  </div>
+</div>
+
+<div class="bar" aria-hidden="false">
+  <div><small>Biweekly gross</small><b id="barBW">$0.00</b></div>
+  <div><small>OT rate</small><b id="barOT">$0.00</b></div>
+  <a href="#stubAnchor">Breakdown</a>
+</div>
+
+<script>
+/* ===================== DATA (Appendix C, operative 6/30/24) ===================== */
+const S7=(a)=>a.map((h,i)=>({s:i+1,h}));
+const LONG=(y)=>y>=20?440:y>=15?300:y>=10?160:y>=5?100:0;
+const BIL={label:"Bilingual premium",group:"check",src:"LAAC 4.84",kind:"ATR",pension:true,type:"pctSel",
+  options:[["0","None"],["2.75","Conversational (2.75%)"],["5.5","Read, write, interpret (5.5%)"]]};
+const POST={label:"POST certificate",group:"check",kind:"ATR",pension:true,type:"pctSel",
+  options:[["0","Basic (included in base pay)"],["1","Intermediate (1%)"],["3","Advanced (Intermediate 1% + Advanced 2%)"]]};
+const OTHER={id:"oatr",label:"Other Adds to Rate",group:"check",src:"Grandfathered or side-letter pay not listed above",kind:"ATR",pension:true,type:"pctIn"};
+const MARKS={label:"Marksmanship",group:"check",kind:"ATP",pension:false,type:"bwSel",
+  options:[["0","None"],["8","Marksman ($8)"],["16","Sharpshooter ($16)"],["32","Expert ($32)"],["64","Distinguished Expert ($64)"]]};
+
+const MOU={
+ "28":{tab:"MOU 28",short:"MPOs",title:"Municipal Police Officers",
+  classes:[
+   {code:"3183-1",name:"Municipal Police Officer I",steps:[{s:1,h:37.58}]},
+   {code:"3183-2",name:"Municipal Police Officer II",steps:[{s:1,h:39.62}]},
+   {code:"3183-3",name:"Municipal Police Officer III",steps:S7([41.79,44.12,46.58,49.18,51.92,54.81,57.87])}],
+  longevity:{kind:"ATP",pension:true,src:"Art. 6.3"},
+  uniform:(c)=>c.code==="3183-3",
+  items:[
+   {id:"post",...POST,src:"Art. 6.1.B"},
+   {id:"ufo",label:"Uniform Field Officer Incentive",sub:"Assigned to field work in uniform",group:"check",src:"Art. 6.11",kind:"ATP",pension:false,type:"pct",v:3},
+   {id:"lead",label:"Lead pay assignment",sub:"$6.00 per hour",group:"check",src:"Art. 6.10",kind:"ATR",pension:true,type:"hr",v:6},
+   {id:"bil",...BIL,src:"Art. 4.10"},
+   OTHER,
+   {id:"mk",...MARKS,src:"Art. 4.13"}],
+  extras:{court:2.5,dmv:2.5,callback:null,disturb:true,standby:false},
+  otRule:"Overtime: hours past the scheduled shift, rate = biweekly pay ÷ 80 × 1.5 (Art. 6.5). Court and DMV pay a 2.5-hour minimum. Call-backs pay actual time at 1.5×; enter them as overtime hours."},
+
+ "30":{tab:"MOU 30",short:"APOs",title:"Airport Peace Officers",
+  classes:[
+   {code:"3225-1",name:"Airport Police Officer I",steps:[{s:1,h:37.58}]},
+   {code:"3225-F",name:"Airport Police Officer F",steps:[{s:1,h:39.62}]},
+   {code:"3225-2",name:"Airport Police Officer II",lvl:"II",steps:S7([41.79,44.12,46.58,49.18,51.92,54.81,57.87])},
+   {code:"3333-0",name:"Airport Police Specialist",lvl:"II",steps:S7([41.79,44.12,46.58,49.18,51.92,54.81,57.87])},
+   {code:"3225-3",name:"Airport Police Officer III",lvl:"III",steps:S7([44.17,46.63,49.23,51.97,54.87,57.93,61.16])}],
+  longevity:{kind:"ATR",pension:true,src:"Art. 6.2"},
+  uniform:()=>true,
+  assign:[
+   {id:"none",label:"No assignment pay"},
+   {id:"motor",label:"Motors",src:"Note 2",pct:(c)=>c.lvl==="II"?11:5.5,needs:["II","III"]},
+   {id:"k9",label:"Canine handler",src:"Note 3",pct:()=>16.5},
+   {id:"det",label:"Detective",src:"Note 7",pct:(c)=>c.lvl==="II"?11:5.5,needs:["II","III"]},
+   {id:"dpu",label:"Dignitary Protection Unit",src:"Note 9",pct:(c)=>c.lvl==="II"?11:5.5,needs:["II","III"]},
+   {id:"range",label:"Rangemaster",src:"Note 11",pct:(c)=>c.lvl==="II"?11:5.5,needs:["II","III"]},
+   {id:"slo",label:"Senior Lead Officer",src:"Note 8",pct:()=>5.5},
+   {id:"esu",label:"Emergency Services Unit",src:"Note 10",pct:()=>5.5},
+   {id:"fto",label:"Field Training Officer (APO II)",src:"Note 14",pct:()=>5.5,needs:["II"]},
+   {id:"vaau",label:"Vulnerability Assessment & Analysis (APO II)",src:"Note 15",pct:()=>5.5,needs:["II"]}],
+  items:[
+   {id:"air",label:"Airfield Hazard Incentive",sub:"Regularly assigned to uniformed duties",group:"check",src:"Note 1",kind:"ATP",pension:false,type:"pct",v:4},
+   {id:"pre96",label:"Hired before July 1, 1996",sub:"Each POST bonus pays $15 per pay period instead of 1% / 2%",group:"check",src:"Note 5.C/E",type:"flag"},
+   {id:"post",...POST,src:"Note 5",alt:{flag:"pre96",type:"bw",v:15}},
+   {id:"avsec",label:"Aviation Security Certification",sub:"Int + Adv POST, 3 yrs LAWA, PC 832.1",group:"check",src:"Note 13",kind:"ATR",pension:true,type:"pct",v:2.75},
+   {id:"ff1",label:"Firefighter I certificate",sub:"Former Airport Safety Officers only",group:"check",src:"Note 6.A",kind:"ATR",pension:true,type:"pct",v:1},
+   {id:"ff2",label:"Firefighter II certificate",sub:"Former Airport Safety Officers only",group:"check",src:"Note 6.B",kind:"ATR",pension:true,type:"pct",v:2},
+   {id:"hazmat",label:"Hazardous Materials",sub:"Grandfathered West End Haz Mat roster",group:"check",src:"Note 12",kind:"ATR",pension:true,type:"pct",v:2.75},
+   {id:"bil",...BIL,src:"Art. 4.11"},
+   OTHER,
+   {id:"mk",...MARKS,src:"Art. 4.14"}],
+  extras:{court:4,dmv:2.5,callback:4,standby:true},
+  otRule:"Overtime: hours over 160 in a 28-day deployment period at 1.5× the regular rate (Art. 6.4). Call-backs pay a 4-hour minimum, court 4 hours, DMV 2.5 hours."},
+
+ "39":{tab:"MOU 39",short:"Sgts & Lts",title:"Airport Supervisory Peace Officers",
+  classes:[
+   {code:"3226-0",name:"Airport Police Sergeant",lvl:"SGT",steps:S7([56.93,60.10,63.45,66.99,70.73,74.67,78.83])},
+   {code:"3185-0",name:"Municipal Police Sergeant",lvl:"MSGT",steps:S7([56.93,60.10,63.45,66.99,70.73,74.67,78.83])},
+   {code:"3227-0",name:"Airport Police Lieutenant",lvl:"LT",steps:S7([63.41,66.95,70.68,74.62,78.78,83.17,87.81])}],
+  longevity:null,
+  uniform:()=>true,
+  assign:[
+   {id:"none",label:"No assignment pay"},
+   {id:"motor",label:"Motors",src:"Note 3",pct:()=>11,needs:["SGT"]},
+   {id:"k9",label:"Canine Unit supervisor",src:"Note 5",pct:()=>11,needs:["SGT"]},
+   {id:"esu",label:"Emergency Services Unit",src:"Note 6",pct:()=>5.5,needs:["SGT"]},
+   {id:"n7",label:"Specialized assignment ($240/BW)",src:"Note 7",bw:240,needs:["SGT"],
+    sub:"Asst. WC, Range, IA, CTF, DPU, VAAU, Training/Recruitment, EOP, Fleet"}],
+  items:[
+   {id:"air",label:"Airfield Hazard Incentive",sub:"Supervises officers receiving airfield pay",group:"check",src:"Note 1",kind:"ATP",pension:false,type:"pct",v:4},
+   {id:"post",...POST,src:"Note 2.B-C"},
+   {id:"psup",label:"Supervisory POST",group:"check",src:"Note 2.E",kind:"ATR",pension:true,type:"pct",v:3,needs:["SGT","MSGT"]},
+   {id:"pmgmt",label:"Management or Supervisory POST",group:"check",src:"Note 2.D",kind:"ATR",pension:true,type:"pct",v:3,needs:["LT"]},
+   {id:"avsec",label:"Aviation Security Supervision",sub:"Int + Adv POST, 2 yrs as supervisor, PC 832.1",group:"check",src:"Note 4",kind:"ATR",pension:true,type:"pct",v:(c)=>c.lvl==="LT"?5.5:2.75},
+   {id:"bil",...BIL,kind:"ATP",src:"Art. 4.11"},
+   OTHER,
+   {id:"mk",...MARKS,src:"Art. 4.13"}],
+  extras:{court:4,dmv:2.5,callback:4,remote:1,standby:true,wc:true},
+  otRule:"Overtime: hours over 40 in a work week at 1.5× the regular rate (Art. 6.3). Call-backs pay a 4-hour minimum, remote work calls 1 hour, court 4 hours, DMV 2.5 hours."},
+
+ "65":{tab:"MOU 65",short:"Park Rangers",title:"Park Rangers",
+  classes:[
+   {code:"1966-0",name:"Park Ranger",lvl:"PR",steps:[{s:1,h:37.58},{s:2,h:39.62},{s:6,h:43.64},{s:7,h:46.07}]},
+   {code:"1967-1",name:"Senior Park Ranger I",lvl:"SPR",steps:S7([37.09,39.16,41.34,43.64,46.07,48.64,51.35])},
+   {code:"1967-2",name:"Senior Park Ranger II",lvl:"SPR",steps:S7([40.71,42.98,45.38,47.91,50.58,53.40,56.38])}],
+  longevity:{kind:"ATR",pension:true,src:"Art. 6.2"},
+  uniform:()=>true,
+  assign:[
+   {id:"none",label:"No assignment pay"},
+   {id:"fto",label:"Field Training Officer ($200/BW)",src:"Art. 6.4",bw:200,needs:["PR"]},
+   {id:"eng",label:"Engine / Water Tender Operator",src:"Note 1",pct:()=>5.5},
+   {id:"slo",label:"Senior Lead Officer",src:"Note 2",pct:()=>5.5},
+   {id:"biid",label:"Bulky Item Illegal Dumping Team",src:"Note 3",pct:()=>5.5,pension:false}],
+  items:[
+   {id:"post",...POST,src:"Art. 6.3.A-B"},
+   {id:"psup",label:"Supervisory POST",group:"check",src:"Art. 6.3.C",kind:"ATR",pension:true,type:"pct",v:2,needs:["SPR"]},
+   {id:"pmgmt",label:"Management or Records Management POST",group:"check",src:"Art. 6.3.D",kind:"ATR",pension:true,type:"pct",v:2,needs:["SPR"]},
+   {id:"bil",...BIL,src:"Art. 4.12"},
+   OTHER],
+  extras:{court:4,dmv:2.5,callback:4,standby:"SPR"},
+  otRule:"Overtime: hours over 160 in a 28-day deployment period at 1.5× the regular rate (Art. 4.5). Call-backs pay a 4-hour minimum, court 4 hours, DMV 2.5 hours."}
+};
+
+/* ===================== STATE ===================== */
+const KEY="laapoa-paycalc-v1";
+let st={mou:"30",per:{}};
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.mou&&MOU[s.mou])st=s;}catch(e){}
+const Q=new URLSearchParams(location.search);
+const EMBED=Q.get("embed")==="1";
+if(EMBED) document.documentElement.classList.add("embed");
+const RANKMAP={
+ "MOU 30|Officer PI":["30","3225-1"],"MOU 30|Officer PII":["30","3225-2"],"MOU 30|Specialist":["30","3333-0"],"MOU 30|Officer PIII":["30","3225-3"],
+ "MOU 28|Officer PII":["28","3183-2"],"MOU 28|Officer PIII":["28","3183-3"],"MOU 28|Sergeant":["39","3185-0"],
+ "MOU 39|Sergeant":["39","3226-0"],"MOU 39|Lieutenant":["39","3227-0"],
+ "MOU 65|Park Ranger":["65","1966-0"],"MOU 65|Park Ranger Supervisor":["65","1967-1"],"MOU 65|Commanding Park Ranger":["65","1967-2"]};
+function seedFromRank(){
+  const key=(Q.get("mou")||"")+"|"+(Q.get("rank")||"");
+  const hit=RANKMAP[key];
+  if(!hit||st.seed===key) return;           // only re-seed when rank changes (e.g. promotion)
+  st.mou=hit[0]; st.seed=key;
+  const i=MOU[hit[0]].classes.findIndex(c=>c.code===hit[1]);
+  const p=P(); if(i>=0&&p.cls!==i){p.cls=i;p.step=null;}
+  save();
+}
+function postHeight(){
+  if(!EMBED||window.parent===window) return;
+  parent.postMessage({type:"earn-height",h:document.documentElement.scrollHeight},"*");
+}
+function P(){ // per-MOU state
+  if(!st.per[st.mou]) st.per[st.mou]={cls:0,step:null,yrs:0,assign:"none",dogs:"1",k9train:false,checks:{},sels:{},ex:{}};
+  return st.per[st.mou];
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
+
+const $=(id)=>document.getElementById(id);
+const money=(n)=>"$"+(Math.round(n*100)/100).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const rate4=(n)=>"$"+n.toFixed(4);
+const esc=(s)=>String(s).replace(/[&<>"]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ===================== RENDER CONTROLS ===================== */
+function renderTabs(){
+  $("mous").innerHTML=Object.entries(MOU).map(([k,m])=>
+    `<button type="button" data-k="${k}" aria-pressed="${k===st.mou}"><b>${m.tab}</b><span>${m.short}</span></button>`).join("");
+  $("mous").querySelectorAll("button").forEach(b=>b.onclick=()=>{st.mou=b.dataset.k;save();renderAll();});
+}
+function cls(){const m=MOU[st.mou];return m.classes[Math.min(P().cls,m.classes.length-1)];}
+function allowed(x,c){return !x.needs||x.needs.includes(c.lvl);}
+
+function renderPosition(){
+  const m=MOU[st.mou],p=P();
+  $("cls").innerHTML=m.classes.map((c,i)=>`<option value="${i}" ${i===p.cls?"selected":""}>${esc(c.name)} (${c.code})</option>`).join("");
+  $("cls").onchange=(e)=>{p.cls=+e.target.value;p.step=null;save();renderAll();};
+  const c=cls();
+  if(p.step===null||!c.steps.find(s=>s.s===p.step)) p.step=c.steps[c.steps.length-1].s;
+  $("steps").innerHTML=c.steps.map(s=>`<button type="button" data-s="${s.s}" aria-pressed="${s.s===p.step}" aria-label="Step ${s.s}, ${money(s.h)} per hour">${s.s}</button>`).join("");
+  $("steps").querySelectorAll("button").forEach(b=>b.onclick=()=>{p.step=+b.dataset.s;save();renderAll();});
+  $("yrsWrap").style.display=m.longevity?"":"none";
+  $("yrs").value=p.yrs;
+  $("yrs").oninput=(e)=>{p.yrs=Math.max(0,+e.target.value||0);save();calc();};
+}
+
+function renderAssign(){
+  const m=MOU[st.mou],p=P(),c=cls();
+  if(!m.assign){$("assignPanel").style.display="none";return;}
+  $("assignPanel").style.display="";
+  const opts=m.assign.filter(a=>allowed(a,c));
+  if(!opts.find(a=>a.id===p.assign)) p.assign="none";
+  $("assign").innerHTML=opts.map(a=>{
+    let tail="";
+    if(a.pct) tail=` (${a.pct(c)}%)`;
+    return `<option value="${a.id}" ${a.id===p.assign?"selected":""}>${esc(a.label)}${tail}</option>`;}).join("");
+  $("assign").onchange=(e)=>{p.assign=e.target.value;save();renderAssign();calc();};
+  const a=opts.find(x=>x.id===p.assign);
+  let sub="";
+  if(a&&a.sub) sub+=`<p class="note">${esc(a.sub)}</p>`;
+  if(st.mou==="30"&&p.assign==="k9"){
+    sub+=`<label class="f" for="dogs">Dogs in your care</label>
+      <select id="dogs"><option value="1" ${p.dogs==="1"?"selected":""}>One dog (10 hrs feeding and care pay)</option>
+      <option value="2" ${p.dogs==="2"?"selected":""}>Two or more (15 hrs feeding and care pay)</option></select>
+      <label class="ck"><input type="checkbox" id="k9train" ${p.k9train?"checked":""}><span class="t">Trains canine handlers<small>Note 4, +5.5%</small></span></label>`;
+  }
+  $("assignSub").innerHTML=sub;
+  if($("dogs")) $("dogs").onchange=(e)=>{p.dogs=e.target.value;save();calc();};
+  if($("k9train")) $("k9train").onchange=(e)=>{p.k9train=e.target.checked;save();calc();};
+}
+
+function itemPct(it,c){return typeof it.v==="function"?it.v(c):it.v;}
+function tagFor(kind,pension){if(!kind)return"";return `<span class="tag ${kind==="ATR"?"atr":"atp"}">${kind==="ATR"?"Adds to Rate":"Adds to Pay"}</span>`;}
+
+function renderChecks(){
+  const m=MOU[st.mou],p=P(),c=cls();
+  const html=m.items.filter(it=>allowed(it,c)).map(it=>{
+    if(it.type==="pctSel"||it.type==="bwSel"){
+      const cur=p.sels[it.id]||"0";
+      return `<div class="sel"><label class="f" for="s_${it.id}">${esc(it.label)} ${tagFor(it.kind)} <small>${esc(it.src)}</small></label>
+        <select id="s_${it.id}" data-id="${it.id}">${it.options.map(([v,l])=>`<option value="${v}" ${v===cur?"selected":""}>${esc(l)}</option>`).join("")}</select></div>`;
+    }
+    if(it.type==="pctIn"){
+      return `<div class="sel"><label class="f" for="n_${it.id}">${esc(it.label)} (%) ${tagFor(it.kind)} <small>${esc(it.src)}</small></label>
+        <input type="number" id="n_${it.id}" data-n="${it.id}" min="0" max="50" step="0.25" inputmode="decimal" value="${p.sels[it.id]||""}" placeholder="0"></div>`;
+    }
+    let val="";
+    if(it.type==="pct") val=`+${itemPct(it,c)}%`;
+    if(it.type==="hr") val=`+${money(it.v)}/hr`;
+    if(it.alt&&p.checks[it.alt.flag]) val=`+${money(it.alt.v)}/BW`;
+    const subline=[it.sub,it.src,val].filter(Boolean).join(", ");
+    return `<label class="ck"><input type="checkbox" data-id="${it.id}" ${p.checks[it.id]?"checked":""}>
+      <span class="t">${esc(it.label)} ${it.type==="flag"?"":tagFor(it.kind)}<small>${esc(subline)}</small></span></label>`;
+  }).join("");
+  $("checks").innerHTML=html;
+  $("checks").querySelectorAll("input[type=checkbox]").forEach(i=>i.onchange=()=>{p.checks[i.dataset.id]=i.checked;save();renderChecks();calc();});
+  $("checks").querySelectorAll("input[data-n]").forEach(i=>i.oninput=()=>{p.sels[i.dataset.n]=String(Math.max(0,+i.value||0));save();calc();});
+  $("checks").querySelectorAll("select").forEach(s=>s.onchange=()=>{p.sels[s.dataset.id]=s.value;save();calc();});
+}
+
+function renderExtras(){
+  const m=MOU[st.mou],p=P(),c=cls(),x=m.extras;
+  const f=[["ot","Overtime hours (1.5×)"]];
+  if(x.callback) f.push(["cb",`Call-backs (${x.callback}-hr min each)`]);
+  if(x.remote) f.push(["rem","Remote work calls (1-hr min)"]);
+  if(x.disturb) f.push(["dist","Disturbance calls (1-hr min)"]);
+  f.push(["court",`Court days (${x.court}-hr min)`]);
+  f.push(["dmv",`DMV hearings (${x.dmv}-hr min)`]);
+  f.push(["hol","Hours worked on a holiday"]);
+  const sb=x.standby===true||(x.standby&&x.standby===c.lvl);
+  if(sb) f.push(["sb","Standby hours (1 hr per 6)"]);
+  if(x.wc&&(c.lvl==="SGT"||c.lvl==="MSGT")) f.push(["wc","Hours as acting Watch Commander ($5/hr)"]);
+  $("extras").innerHTML=f.map(([k,l])=>`<div><label class="f" for="x_${k}">${l}</label><input type="number" id="x_${k}" data-k="${k}" min="0" step="0.5" inputmode="decimal" value="${p.ex[k]||""}" placeholder="0"></div>`).join("");
+  $("extras").querySelectorAll("input").forEach(i=>i.oninput=()=>{p.ex[i.dataset.k]=Math.max(0,+i.value||0);save();calc();});
+  $("otRule").textContent=m.otRule;
+}
+
+/* ===================== CALC ===================== */
+function calc(){
+  const m=MOU[st.mou],p=P(),c=cls();
+  const H=c.steps.find(s=>s.s===p.step).h;
+  const atr=[],atp=[]; // {label, hr (hourly add), bw, pension, src}
+  const addPct=(arr,label,pct,pension,src)=>arr.push({label:`${label} (${pct}%)`,hr:H*pct/100,bw:H*pct/100*80,pension,src});
+  const addBW=(arr,label,bw,pension,src)=>arr.push({label,hr:bw/80,bw,pension,src});
+
+  // assignment
+  if(m.assign){
+    const a=m.assign.find(x=>x.id===p.assign&&allowed(x,c));
+    if(a&&a.id!=="none"){
+      const pen=a.pension!==false;
+      if(a.pct) addPct(atr,a.label,a.pct(c),pen,a.src);
+      if(a.bw) addBW(atr,a.label.replace(/\s*\(\$.*\)/,""),a.bw,pen,a.src);
+      if(st.mou==="30"&&a.id==="k9"){
+        if(p.k9train) addPct(atr,"Canine handler trainer",5.5,true,"Note 4");
+        const hrs=p.dogs==="2"?15:10;
+        atp.push({label:`Canine feeding and care (${hrs} hrs at base)`,bw:H*hrs,pension:false,src:"Note 3"});
+      }
+    }
+  }
+  // items
+  m.items.filter(it=>allowed(it,c)).forEach(it=>{
+    if(it.type==="flag") return;
+    const arr=it.kind==="ATR"?atr:atp;
+    if(it.type==="pctIn"){const v=+(p.sels[it.id]||0);if(v)addPct(arr,it.label,v,it.pension,it.src);return;}
+    if(it.type==="pctSel"){const v=+(p.sels[it.id]||0);if(!v)return;
+      if(it.id==="post"){
+        const lv=v>=3?["Intermediate POST","Advanced POST"]:["Intermediate POST"], pc=[1,2];
+        lv.forEach((l,i)=>{ if(it.alt&&p.checks[it.alt.flag]) addBW(arr,`${l} ($${it.alt.v}/BW)`,it.alt.v,it.pension,it.src);
+                            else addPct(arr,l,pc[i],it.pension,it.src); });
+        return;}
+      addPct(arr,it.label,v,it.pension,it.src);return;}
+    if(it.type==="bwSel"){const v=+(p.sels[it.id]||0);if(v)arr.push({label:`${it.label}`,bw:v,pension:false,src:it.src});return;}
+    if(!p.checks[it.id]) return;
+    if(it.alt&&p.checks[it.alt.flag]){addBW(arr,`${it.label} ($${it.alt.v}/BW)`,it.alt.v,it.pension,it.src);return;}
+    if(it.type==="pct") addPct(arr,it.label,itemPct(it,c),it.pension,it.src);
+    if(it.type==="hr") arr.push({label:`${it.label} ($${it.v}/hr)`,hr:it.v,bw:it.v*80,pension:it.pension,src:it.src});
+  });
+  // longevity
+  if(m.longevity){
+    const L=LONG(p.yrs);
+    if(L){
+      const row={label:`Length of service, ${p.yrs} yrs ($${L}/BW)`,hr:L/80,bw:L,pension:m.longevity.pension,src:m.longevity.src};
+      (m.longevity.kind==="ATR"?atr:atp).push(row);
+    }
+  }
+  // WC hours (MOU 39 Note 8: pensionable, Adds to Pay)
+  const ex=p.ex||{};
+  if(m.extras.wc&&(c.lvl==="SGT"||c.lvl==="MSGT")&&ex.wc) atp.push({label:`Acting Watch Commander, ${ex.wc} hrs at $5`,bw:ex.wc*5,pension:true,src:"Note 8"});
+  // uniform note (annual only)
+  const uni=m.uniform(c)?1525:0;
+
+  const rate=H+atr.reduce((s,r)=>s+r.hr,0);
+  const baseBW=H*80;
+  const atrBW=atr.reduce((s,r)=>s+r.bw,0);
+  const atpBW=atp.reduce((s,r)=>s+r.bw,0);
+  const regBW=baseBW+atrBW+atpBW;
+  const ot=rate*1.5;
+  const x=m.extras, sbOK=x.standby===true||(x.standby&&x.standby===c.lvl);
+  const otRows=[];
+  const otAdd=(label,hrs,mult,src)=>{if(hrs>0)otRows.push({label,amt:hrs*rate*mult,src});};
+  otAdd(`Overtime, ${ex.ot||0} hrs at ${money(ot)}`,ex.ot||0,1.5);
+  if(x.callback) otAdd(`Call-backs, ${ex.cb||0} × ${x.callback} hrs`,(ex.cb||0)*x.callback,1.5);
+  if(x.remote) otAdd(`Remote work calls, ${ex.rem||0} × 1 hr`,(ex.rem||0)*1,1.5);
+  if(x.disturb) otAdd(`Disturbance calls, ${ex.dist||0} × 1 hr`,(ex.dist||0)*1,1.5);
+  otAdd(`Court, ${ex.court||0} × ${x.court} hrs`,(ex.court||0)*x.court,1.5);
+  otAdd(`DMV hearings, ${ex.dmv||0} × ${x.dmv} hrs`,(ex.dmv||0)*x.dmv,1.5);
+  otAdd(`Holiday premium, ${ex.hol||0} hrs × 0.5`,(ex.hol||0)*0.5,1);
+  if(sbOK) otAdd(`Standby, ${ex.sb||0} hrs ÷ 6`,(ex.sb||0)/6,1);
+  const otBW=otRows.reduce((s,r)=>s+r.amt,0);
+  const pensBW=baseBW+atr.filter(r=>r.pension).reduce((s,r)=>s+r.bw,0)+atp.filter(r=>r.pension).reduce((s,r)=>s+r.bw,0);
+
+  /* ---- stub ---- */
+  $("stubTitle").textContent=`${m.tab}: ${c.name}`;
+  $("stubSub").textContent=`Class ${c.code}, step ${p.step}, base ${money(H)}/hr`;
+  $("kRate").textContent=rate4(rate);
+  $("kBW").textContent=money(regBW+otBW);
+  $("barBW").textContent=money(regBW+otBW);
+  $("barOT").textContent=rate4(ot);
+  $("baseline").textContent=`Step ${p.step}: ${money(H)}/hr, ${money(H*80)} biweekly, ${money(H*2088)} a year`;
+
+  const row=(r,amt)=>`<div class="row"><span>${esc(r.label)}${r.pension===undefined?"":`<span class="p ${r.pension?"y":"n"}">${r.pension?"pensionable":"non-pensionable"}</span>`}</span><span>${money(amt)}</span></div>`;
+  let h="";
+  h+=`<div class="blk"><h3>Adds to Rate</h3><div class="row"><span>Base salary (80 hrs)</span><span>${money(baseBW)}</span></div>`;
+  h+=atr.length?atr.map(r=>row(r,r.bw)).join(""):`<div class="empty">No rate bonuses selected</div>`;
+  h+=`<div class="row tot"><span>Regular rate × 80 (${rate4(rate)}/hr)</span><span>${money(baseBW+atrBW)}</span></div></div>`;
+  h+=`<div class="blk"><h3>Adds to Pay</h3>`;
+  h+=atp.length?atp.map(r=>row(r,r.bw)).join(""):`<div class="empty">No flat pay items selected</div>`;
+  h+=`</div>`;
+  h+=`<div class="blk"><h3>Overtime and premiums</h3><div class="row"><span>Overtime rate (1.5×)</span><span>${rate4(ot)}</span></div>`;
+  h+=otRows.length?otRows.map(r=>`<div class="row"><span>${esc(r.label)}</span><span>${money(r.amt)}</span></div>`).join(""):`<div class="empty">No overtime entered</div>`;
+  h+=`</div>`;
+  h+=`<div class="blk"><div class="row"><span>Regular biweekly</span><span>${money(regBW)}</span></div>
+      <div class="row"><span>Overtime and premiums</span><span>${money(otBW)}</span></div>
+      <div class="row tot grand"><span>Biweekly gross</span><span>${money(regBW+otBW)}</span></div>
+      <div class="row"><span>Pensionable biweekly</span><span>${money(pensBW)}</span></div></div>`;
+  h+=`<div class="blk"><h3>Annual (2,088 hrs, no overtime)</h3>
+      <div class="row"><span>Base salary</span><span>${money(H*2088)}</span></div>
+      <div class="row"><span>Regular pay (${money(regBW)} × 26.1)</span><span>${money(regBW*26.1)}</span></div>
+      ${uni?`<div class="row"><span>Uniform allowance, pay period 11<span class="p n">non-pensionable</span></span><span>${money(uni)}</span></div>`:""}
+      <div class="row tot"><span>Annual total</span><span>${money(regBW*26.1+uni)}</span></div></div>`;
+  $("stubBody").innerHTML=h;
+}
+
+function renderAll(){renderTabs();renderPosition();renderAssign();renderChecks();renderExtras();calc();}
+seedFromRank();
+renderAll();
+if(EMBED){
+  try{new ResizeObserver(postHeight).observe(document.body);}catch(e){}
+  window.addEventListener("load",postHeight);
+  postHeight();
+}
+</script>
+</body>
+</html>
