@@ -110,10 +110,6 @@ html.embed .steps button[aria-pressed="true"]{background:var(--amber);color:var(
 html.embed .acts button{border-color:var(--amber)}
 html.embed .acts button:first-child{background:var(--amber);color:var(--amber-ink)}
 .printhd{display:none}
-.mous.locked{display:block;background:var(--amber);color:var(--amber-ink)}
-.lockbar{display:flex;align-items:baseline;gap:10px;padding:10px 14px}
-.lockbar b{font-family:var(--cond);font-size:1.25rem}
-.lockbar span{font-size:.85rem}
 #receipt{display:none}
 @media print{
   @page{size:auto;margin:8mm}
@@ -331,7 +327,6 @@ let st={mou:"30",per:{}};
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.mou&&MOU[s.mou])st=s;}catch(e){}
 const Q=new URLSearchParams(location.search);
 const EMBED=Q.get("embed")==="1";
-let LOCKED=null;
 if(EMBED) document.documentElement.classList.add("embed");
 const RANKMAP={
  "MOU 30|Officer PI":["30","3225-1"],"MOU 30|Officer PII":["30","3225-2"],"MOU 30|Specialist":["30","3333-0"],"MOU 30|Officer PIII":["30","3225-3"],
@@ -341,9 +336,7 @@ const RANKMAP={
 function seedFromRank(){
   const key=(Q.get("mou")||"")+"|"+(Q.get("rank")||"");
   const hit=RANKMAP[key];
-  if(!hit) return;
-  if(EMBED){ LOCKED=hit[0]; st.mou=hit[0]; }  // in the member app, MOU is bound to the member's enrollment
-  if(st.seed===key){ save(); return; }       // only re-seed class when rank changes (e.g. promotion)
+  if(!hit||st.seed===key) return;            // preselect only on first open or when rank changes
   st.mou=hit[0]; st.seed=key;
   const i=MOU[hit[0]].classes.findIndex(c=>c.code===hit[1]);
   const p=P(); if(i>=0&&p.cls!==i){p.cls=i;p.step=null;}
@@ -366,12 +359,6 @@ const esc=(s)=>String(s).replace(/[&<>"]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&g
 
 /* ===================== RENDER CONTROLS ===================== */
 function renderTabs(){
-  if(LOCKED){
-    const m=MOU[LOCKED];
-    $("mous").classList.add("locked");
-    $("mous").innerHTML=`<div class="lockbar"><b>${m.tab}</b><span>${m.title}</span></div>`;
-    return;
-  }
   $("mous").innerHTML=Object.entries(MOU).map(([k,m])=>
     `<button type="button" data-k="${k}" aria-pressed="${k===st.mou}"><b>${m.tab}</b><span>${m.short}</span></button>`).join("");
   $("mous").querySelectorAll("button").forEach(b=>b.onclick=()=>{st.mou=b.dataset.k;save();renderAll();});
