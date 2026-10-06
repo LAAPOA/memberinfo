@@ -6,7 +6,7 @@
 <title>LAAPOA Pay Calculator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --ink:#13294B; --paper:#F4F6F9; --card:#FFFFFF; --rule:#CCD5E1; --muted:#5B6B82;
@@ -104,6 +104,43 @@ html.embed .stub{border-color:var(--amber)}
 html.embed .stub::before{background:repeating-linear-gradient(90deg,var(--amber) 0 10px,transparent 10px 16px)}
 html.embed .big{border-bottom-color:var(--amber)}
 html.embed .steps button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink);border-color:var(--amber)}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.acts button{min-height:44px;border-radius:8px;border:2px solid var(--ink);background:var(--card);font-weight:600;cursor:pointer}
+.acts button:first-child{background:var(--ink);color:var(--paper)}
+html.embed .acts button{border-color:var(--amber)}
+html.embed .acts button:first-child{background:var(--amber);color:var(--amber-ink)}
+.printhd{display:none}
+.mous.locked{display:block;background:var(--amber);color:var(--amber-ink)}
+.lockbar{display:flex;align-items:baseline;gap:10px;padding:10px 14px}
+.lockbar b{font-family:var(--cond);font-size:1.25rem}
+.lockbar span{font-size:.85rem}
+#receipt{display:none}
+@media print{
+  @page{size:auto;margin:8mm}
+  html,body{background:#fff!important}
+  body *{visibility:hidden}
+  .bar{display:none!important}
+  #receipt,#receipt *{visibility:visible}
+  #receipt{display:block;position:absolute;left:0;right:0;top:0;margin:0 auto;width:72mm;color:#000;
+    font-family:"IBM Plex Mono","Courier New",Courier,monospace;font-size:8.5pt;line-height:1.35}
+}
+#receipt .r-hd{text-align:center;padding:2mm 0 1mm}
+#receipt .r-org{font-size:8pt;letter-spacing:.25em}
+#receipt .r-mou{font-size:15pt;font-weight:700;letter-spacing:.04em;margin-top:1mm}
+#receipt .r-rank{font-size:11.5pt;font-weight:700;text-transform:uppercase}
+#receipt .r-name{font-size:13pt;font-weight:700;text-transform:uppercase}
+#receipt .r-cut{border:0;border-top:1px dashed #000;margin:2mm 0}
+#receipt .r-dbl{border:0;border-top:3px double #000;margin:2mm 0}
+#receipt .r-sec{font-weight:700;text-transform:uppercase;margin-top:1mm}
+#receipt .r-ln{display:flex;align-items:baseline;gap:1mm}
+#receipt .r-ln .l{flex:0 1 auto;min-width:0}
+#receipt .r-ln .d{flex:1 1 auto;border-bottom:1px dotted #000;transform:translateY(-.25em);min-width:3mm}
+#receipt .r-ln .a{flex:none;text-align:right}
+#receipt .r-ln small{display:block;font-size:6.5pt}
+#receipt .r-tot{font-weight:700;font-size:10pt}
+#receipt .r-grand{font-weight:700;font-size:12pt}
+#receipt .r-c{text-align:center}
+#receipt .r-ft{text-align:center;font-size:7pt;margin-top:2mm}
 </style>
 </head>
 <body>
@@ -159,11 +196,16 @@ html.embed .steps button[aria-pressed="true"]{background:var(--amber);color:var(
         </div>
         <div id="stubBody"></div>
       </div>
+      <div class="acts">
+        <button type="button" id="btnPrint">Print / Save PDF</button>
+        <button type="button" id="btnEmail">Email</button>
+      </div>
       <footer>Estimate only. Adds to Rate items raise the hourly rate used for overtime; Adds to Pay items are flat cash. Pensionable status follows each MOU's own wording. Annual figures use the City's 2,088-hour year.</footer>
     </aside>
   </div>
 </div>
 
+<div id="receipt" aria-hidden="true"></div>
 <div class="bar" aria-hidden="false">
   <div><small>Biweekly gross</small><b id="barBW">$0.00</b></div>
   <div><small>OT rate</small><b id="barOT">$0.00</b></div>
@@ -289,6 +331,7 @@ let st={mou:"30",per:{}};
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.mou&&MOU[s.mou])st=s;}catch(e){}
 const Q=new URLSearchParams(location.search);
 const EMBED=Q.get("embed")==="1";
+let LOCKED=null;
 if(EMBED) document.documentElement.classList.add("embed");
 const RANKMAP={
  "MOU 30|Officer PI":["30","3225-1"],"MOU 30|Officer PII":["30","3225-2"],"MOU 30|Specialist":["30","3333-0"],"MOU 30|Officer PIII":["30","3225-3"],
@@ -298,7 +341,9 @@ const RANKMAP={
 function seedFromRank(){
   const key=(Q.get("mou")||"")+"|"+(Q.get("rank")||"");
   const hit=RANKMAP[key];
-  if(!hit||st.seed===key) return;           // only re-seed when rank changes (e.g. promotion)
+  if(!hit) return;
+  if(EMBED){ LOCKED=hit[0]; st.mou=hit[0]; }  // in the member app, MOU is bound to the member's enrollment
+  if(st.seed===key){ save(); return; }       // only re-seed class when rank changes (e.g. promotion)
   st.mou=hit[0]; st.seed=key;
   const i=MOU[hit[0]].classes.findIndex(c=>c.code===hit[1]);
   const p=P(); if(i>=0&&p.cls!==i){p.cls=i;p.step=null;}
@@ -321,6 +366,12 @@ const esc=(s)=>String(s).replace(/[&<>"]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&g
 
 /* ===================== RENDER CONTROLS ===================== */
 function renderTabs(){
+  if(LOCKED){
+    const m=MOU[LOCKED];
+    $("mous").classList.add("locked");
+    $("mous").innerHTML=`<div class="lockbar"><b>${m.tab}</b><span>${m.title}</span></div>`;
+    return;
+  }
   $("mous").innerHTML=Object.entries(MOU).map(([k,m])=>
     `<button type="button" data-k="${k}" aria-pressed="${k===st.mou}"><b>${m.tab}</b><span>${m.short}</span></button>`).join("");
   $("mous").querySelectorAll("button").forEach(b=>b.onclick=()=>{st.mou=b.dataset.k;save();renderAll();});
@@ -519,6 +570,63 @@ function calc(){
 }
 
 function renderAll(){renderTabs();renderPosition();renderAssign();renderChecks();renderExtras();calc();}
+function stubText(){
+  const L=[];
+  L.push("LAAPOA COMPENSATION ESTIMATE");
+  if(Q.get("name")) L.push(((Q.get("rank")||"")+" "+Q.get("name")).trim());
+  L.push($("stubTitle").textContent);
+  L.push($("stubSub").textContent);
+  L.push("Regular hourly rate: "+$("kRate").textContent+"   Biweekly gross: "+$("kBW").textContent);
+  document.querySelectorAll("#stubBody .blk").forEach(b=>{
+    const h=b.querySelector("h3"); L.push(""); if(h) L.push(h.textContent.toUpperCase());
+    b.querySelectorAll(".row,.empty").forEach(r=>{
+      if(r.classList.contains("empty")){L.push("  "+r.textContent);return;}
+      const sp=r.children; const tag=sp[0].querySelector(".p");
+      let lab=""; sp[0].childNodes.forEach(n=>{if(n!==tag) lab+=n.textContent;});
+      lab=lab.replace(/\s+/g," ").trim()+(tag?" ("+tag.textContent+")":""); const amt=sp[1]?sp[1].textContent:"";
+      L.push("  "+lab+": "+amt);
+    });
+  });
+  L.push("");
+  L.push("Estimate only. Appendix C rates (June 30, 2024); annual figures use a 2,088-hour year.");
+  L.push("Generated "+new Date().toLocaleString("en-US"));
+  return L.join("\n");
+}
+function buildReceipt(){
+  const m=MOU[st.mou],c=cls(),p=P();
+  const name=(Q.get("name")||"").trim();
+  const rank=(Q.get("rank")||"").trim()||c.name;
+  const now=new Date();
+  const ln=(l,a,cls,tag)=>`<div class="r-ln ${cls||""}"><span class="l">${esc(l)}${tag?`<small>${esc(tag)}</small>`:""}</span><span class="d"></span><span class="a">${esc(a)}</span></div>`;
+  let h=`<div class="r-hd"><div class="r-org">L A A P O A</div><div class="r-mou">${esc(m.tab)}</div><div class="r-rank">${esc(rank)}</div>${name?`<div class="r-name">${esc(name)}</div>`:""}</div>`;
+  h+=`<hr class="r-dbl"><div class="r-c">COMPENSATION ESTIMATE</div>`;
+  h+=`<div class="r-c">${now.toLocaleDateString("en-US",{month:"2-digit",day:"2-digit",year:"numeric"})}  ${now.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"})}</div><hr class="r-cut">`;
+  h+=ln("CLASS",c.code)+ln("STEP",String(p.step))+(m.longevity?ln("YRS OF SERVICE",String(p.yrs)):"");
+  h+=ln("HOURLY RATE",$("kRate").textContent,"r-tot");
+  document.querySelectorAll("#stubBody .blk").forEach(b=>{
+    const h3=b.querySelector("h3"); h+=`<hr class="r-cut">`; if(h3) h+=`<div class="r-sec">${esc(h3.textContent)}</div>`;
+    b.querySelectorAll(".row,.empty").forEach(r=>{
+      if(r.classList.contains("empty")){h+=`<div>  ${esc(r.textContent)}</div>`;return;}
+      const sp=r.children, tag=sp[0].querySelector(".p");
+      let lab=""; sp[0].childNodes.forEach(n=>{if(n!==tag) lab+=n.textContent;});
+      const k=r.classList.contains("grand")?"r-grand":(r.classList.contains("tot")?"r-tot":"");
+      h+=ln(lab.replace(/\s+/g," ").trim(),sp[1]?sp[1].textContent:"",k,tag?tag.textContent:"");
+    });
+  });
+  h+=`<hr class="r-dbl"><div class="r-ft">ESTIMATE ONLY - NOT A PAY STUB<br>APPENDIX C RATES (06/30/2024)<br>2,088-HOUR YEAR<br><br>* * * LAAPOA * * *</div>`;
+  $("receipt").innerHTML=h;
+}
+$("btnPrint").onclick=()=>{
+  buildReceipt();
+  try{window.focus();window.print();}catch(e){alert("Printing isn't available here. Use Email instead.");}
+};
+window.addEventListener("beforeprint",buildReceipt);
+$("btnEmail").onclick=()=>{
+  const subj="LAAPOA Compensation Estimate - "+$("stubTitle").textContent;
+  const url="mailto:?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(stubText());
+  const a=document.createElement("a"); a.href=url; a.target="_top"; a.rel="noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+};
 seedFromRank();
 renderAll();
 if(EMBED){
