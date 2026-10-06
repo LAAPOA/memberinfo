@@ -291,7 +291,8 @@ const MOU={
    {id:"post",...POST,src:"Note 2.B-C"},
    {id:"psup",label:"Supervisory POST",group:"check",src:"Note 2.E",kind:"ATR",pension:true,type:"pct",v:3,needs:["SGT","MSGT"]},
    {id:"pmgmt",label:"Management or Supervisory POST",group:"check",src:"Note 2.D",kind:"ATR",pension:true,type:"pct",v:3,needs:["LT"]},
-   {id:"avsec",label:"Aviation Security Supervision",sub:"Int + Adv POST, 2 yrs as supervisor, PC 832.1",group:"check",src:"Note 4",kind:"ATR",pension:true,type:"pct",v:(c)=>c.lvl==="LT"?5.5:2.75},
+   {id:"avsec",label:"Aviation Security Certification",sub:"Payroll: 10.091 Certification - Aviation Security",group:"check",src:"Note 4",kind:"ATR",pension:true,type:"pct",v:(c)=>c.lvl==="LT"?5.5:2.75},
+   {id:"wcreg",label:"Watch Commander, regularly assigned",sub:"$5.00 per hour on all paid hours",group:"check",src:"Note 8",kind:"ATP",pension:true,type:"hrPay",v:5,needs:["SGT","MSGT"]},
    {id:"bil",...BIL,kind:"ATP",src:"Art. 4.11"},
    OTHER,
    {id:"mk",...MARKS,src:"Art. 4.13"}],
@@ -421,14 +422,14 @@ function renderChecks(){
     }
     let val="";
     if(it.type==="pct") val=`+${itemPct(it,c)}%`;
-    if(it.type==="hr") val=`+${money(it.v)}/hr`;
+    if(it.type==="hr"||it.type==="hrPay") val=`+${money(it.v)}/hr`;
     if(it.alt&&p.checks[it.alt.flag]) val=`+${money(it.alt.v)}/BW`;
     const subline=[it.sub,it.src,val].filter(Boolean).join(", ");
     return `<label class="ck"><input type="checkbox" data-id="${it.id}" ${p.checks[it.id]?"checked":""}>
       <span class="t">${esc(it.label)} ${it.type==="flag"?"":tagFor(it.kind)}<small>${esc(subline)}</small></span></label>`;
   }).join("");
   $("checks").innerHTML=html;
-  $("checks").querySelectorAll("input[type=checkbox]").forEach(i=>i.onchange=()=>{p.checks[i.dataset.id]=i.checked;save();renderChecks();calc();});
+  $("checks").querySelectorAll("input[type=checkbox]").forEach(i=>i.onchange=()=>{p.checks[i.dataset.id]=i.checked;save();renderChecks();renderExtras();calc();});
   $("checks").querySelectorAll("input[data-n]").forEach(i=>i.oninput=()=>{p.sels[i.dataset.n]=String(Math.max(0,+i.value||0));save();calc();});
   $("checks").querySelectorAll("select").forEach(s=>s.onchange=()=>{p.sels[s.dataset.id]=s.value;save();calc();});
 }
@@ -444,7 +445,7 @@ function renderExtras(){
   f.push(["hol","Hours worked on a holiday"]);
   const sb=x.standby===true||(x.standby&&x.standby===c.lvl);
   if(sb) f.push(["sb","Standby hours (1 hr per 6)"]);
-  if(x.wc&&(c.lvl==="SGT"||c.lvl==="MSGT")) f.push(["wc","Hours as acting Watch Commander ($5/hr)"]);
+  if(x.wc&&(c.lvl==="SGT"||c.lvl==="MSGT")&&!p.checks.wcreg) f.push(["wc","Hours as acting Watch Commander ($5/hr)"]);
   $("extras").innerHTML=f.map(([k,l])=>`<div><label class="f" for="x_${k}">${l}</label><input type="number" id="x_${k}" data-k="${k}" min="0" step="0.5" inputmode="decimal" value="${p.ex[k]||""}" placeholder="0"></div>`).join("");
   $("extras").querySelectorAll("input").forEach(i=>i.oninput=()=>{p.ex[i.dataset.k]=Math.max(0,+i.value||0);save();calc();});
   $("otRule").textContent=m.otRule;
@@ -488,6 +489,7 @@ function calc(){
     if(!p.checks[it.id]) return;
     if(it.alt&&p.checks[it.alt.flag]){addBW(arr,`${it.label} ($${it.alt.v}/BW)`,it.alt.v,it.pension,it.src);return;}
     if(it.type==="pct") addPct(arr,it.label,itemPct(it,c),it.pension,it.src);
+    if(it.type==="hrPay"){arr.push({label:`${it.label} ($${it.v}/hr × 80)`,bw:it.v*80,pension:it.pension,src:it.src});return;}
     if(it.type==="hr") arr.push({label:`${it.label} ($${it.v}/hr)`,hr:it.v,bw:it.v*80,pension:it.pension,src:it.src});
   });
   // longevity
@@ -500,7 +502,7 @@ function calc(){
   }
   // WC hours (MOU 39 Note 8: pensionable, Adds to Pay)
   const ex=p.ex||{};
-  if(m.extras.wc&&(c.lvl==="SGT"||c.lvl==="MSGT")&&ex.wc) atp.push({label:`Acting Watch Commander, ${ex.wc} hrs at $5`,bw:ex.wc*5,pension:true,src:"Note 8"});
+  if(m.extras.wc&&(c.lvl==="SGT"||c.lvl==="MSGT")&&ex.wc&&!p.checks.wcreg) atp.push({label:`Acting Watch Commander, ${ex.wc} hrs at $5`,bw:ex.wc*5,pension:true,src:"Note 8"});
   // uniform note (annual only)
   const uni=m.uniform(c)?1525:0;
 
