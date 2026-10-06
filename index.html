@@ -1479,7 +1479,7 @@ window.addEventListener('message',function(e){
           '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' \u00b7 '+esc(m.mou):'')+'</div></div>' +
         '</div>' +
         tabBar('earn') +
-        '<iframe id="earnFrame" title="Compensation calculator" src="EARN.html?embed=1&mou='+encodeURIComponent(m.mou||'')+'&rank='+encodeURIComponent(m.rank||'')+'" style="width:100%;min-height:700px;border:0;display:block;background:transparent"></iframe>' +
+        '<iframe id="earnFrame" title="Compensation calculator" src="EARN.html?embed=1&mou='+encodeURIComponent(m.mou||'')+'&rank='+encodeURIComponent(m.rank||'')+'&name='+encodeURIComponent(m.name||'')+'" style="width:100%;min-height:700px;border:0;display:block;background:transparent"></iframe>' +
       '</div>' +
       '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
