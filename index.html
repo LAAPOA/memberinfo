@@ -209,7 +209,14 @@ try {
   const s = localStorage.getItem('laapoa_member_session');
   if (s) { const d = JSON.parse(s); Object.assign(state, d, {view:'info',loading:false,error:'',success:''}); }
 } catch(e) {}
-
+// Deep link: #events, #decide, #bulletin, #announce, #directory, #info
+var _deepTab = (location.hash || '').replace('#','').toLowerCase();
+var _validTabs = ['events','decide','bulletin','announce','directory','info'];
+if (_validTabs.indexOf(_deepTab) >= 0) {
+  if (state.token && state.member) { state.tab = _deepTab; }
+  else { try { sessionStorage.setItem('laapoa_deep_tab', _deepTab); } catch(e) {} }
+  try { history.replaceState(null, '', location.pathname + location.search); } catch(e) {}
+}
 function setState(updates) {
   Object.assign(state, updates);
   // Persist session
@@ -279,7 +286,9 @@ async function handleLogin(e) {
   state._eventsEnabled = res.announcements ? res.announcements.eventsEnabled : true;
   state._decideEnabled = res.announcements ? res.announcements.decideEnabled : true;
 
-  setState({view:'info', member:res.member, token:res.token, row:res.row, loading:false, error:'', tab:'announce'});
+  var _pendingTab = 'announce';
+  try { var _pt = sessionStorage.getItem('laapoa_deep_tab'); if (_pt) { _pendingTab = _pt; sessionStorage.removeItem('laapoa_deep_tab'); } } catch(e) {}
+  setState({view:'info', member:res.member, token:res.token, row:res.row, loading:false, error:'', tab:_pendingTab});  
   checkTokenExpiry();
   initPusher();
   showInstallPrompt();
