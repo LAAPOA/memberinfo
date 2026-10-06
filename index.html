@@ -211,7 +211,7 @@ try {
 } catch(e) {}
 // Deep link: #events, #decide, #bulletin, #announce, #directory, #info
 var _deepTab = (location.hash || '').replace('#','').toLowerCase();
-var _validTabs = ['events','decide','bulletin','announce','directory','info'];
+var _validTabs = ['events','decide','bulletin','announce','directory','info','earn'];
 if (_validTabs.indexOf(_deepTab) >= 0) {
   if (state.token && state.member) { state.tab = _deepTab; }
   else { try { sessionStorage.setItem('laapoa_deep_tab', _deepTab); } catch(e) {} }
@@ -702,7 +702,12 @@ function saveContact(person) {
   }
 }
 
-function render() {
+window.addEventListener('message',function(e){
+  if(e.origin!==location.origin||!e.data||e.data.type!=='earn-height')return;
+  var f=document.getElementById('earnFrame');
+  if(f)f.style.height=(e.data.h+8)+'px';
+});
+  function render() {
   const app = document.getElementById('app');
 
   function tabBar(active) {
@@ -716,6 +721,7 @@ function render() {
       (state._eventsEnabled!==false?'<button class="tab'+(active==='events'?' on':'')+'" id="tabEvents">Events</button>':'') +
       (state._decideEnabled!==false?'<span style="width:2px;background:var(--gold);opacity:.3;margin:6px 0;flex-shrink:0"></span><button class="tab'+(active==='decide'?' on':'')+'" id="tabDecide">Decide</button>':'') +
       '<button class="tab'+(active==='bulletin'?' on':'')+'" id="tabBB">'+bbLabel+'</button>' +
+      '<button class="tab'+(active==='earn'?' on':'')+'" id="tabEarn">EARN</button>' +
     '</div>';
   }
 
@@ -747,6 +753,8 @@ function render() {
     var tdc=document.getElementById('tabDecide');
     if(tdc)tdc.addEventListener('click',function(){setState({tab:'decide'});});
     if(tb)tb.addEventListener('click',function(){setState({tab:'bulletin'});});
+    var tEarn=document.getElementById('tabEarn');
+    if(tEarn)tEarn.addEventListener('click',function(){setState({tab:'earn'});});
   }
 
   if (state.view === 'login') {
@@ -1461,7 +1469,23 @@ function render() {
     return;
   }
 
-  // Bulletin Board view
+    // EARN view (compensation calculator)
+  if (state.tab === 'earn') {
+    app.innerHTML =
+      '<div class="card">' +
+        '<div class="member-header">' +
+          '<div class="avatar">'+initials+'</div>' +
+          '<div><div class="member-name">'+esc(m.name)+'</div>' +
+          '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' \u00b7 '+esc(m.mou):'')+'</div></div>' +
+        '</div>' +
+        tabBar('earn') +
+        '<iframe id="earnFrame" title="Compensation calculator" src="EARN.html?embed=1&mou='+encodeURIComponent(m.mou||'')+'&rank='+encodeURIComponent(m.rank||'')+'" style="width:100%;min-height:700px;border:0;display:block;background:transparent"></iframe>' +
+      '</div>' +
+      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+    wireTabEvents();
+    return;
+  }
+    // Bulletin Board view
   if (state.tab === 'bulletin') {
     var bbHtml = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Loading board...</div>';
     app.innerHTML =
