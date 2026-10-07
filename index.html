@@ -728,18 +728,35 @@ window.addEventListener('message',function(e){
   function render() {
   const app = document.getElementById('app');
 
-  function tabBar(active) {
-    var bbLabel = 'Mem<span style="font-weight:700;color:var(--red)">BB</span>ers';
-    var infoLabel = 'My Info <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;opacity:.6"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
-    return '<div class="tabs">' +
-      '<button class="tab'+(active==='info'||active==='edit'?' on':'')+'" id="tabInfo">'+infoLabel+'</button>' +
-      '<button class="tab'+(active==='directory'||active==='directory_blocked'?' on':'')+'" id="tabDir">Directory</button>' +
-      '<button class="tab'+(active==='announce'?' on':'')+'" id="tabAnn">Announce'+(annBadgeCount>0&&active!=='announce'?'<span class="ann-badge">'+annBadgeCount+'</span>':'')+'</button>' +
-      '<span style="width:2px;background:var(--gold);opacity:.3;margin:6px 0;flex-shrink:0"></span>' +
-      (state._eventsEnabled!==false?'<button class="tab'+(active==='events'?' on':'')+'" id="tabEvents">Events</button>':'') +
-      (state._decideEnabled!==false?'<span style="width:2px;background:var(--gold);opacity:.3;margin:6px 0;flex-shrink:0"></span><button class="tab'+(active==='decide'?' on':'')+'" id="tabDecide">Decide</button>':'') +
-      '<button class="tab'+(active==='bulletin'?' on':'')+'" id="tabBB">'+bbLabel+'</button>' +
-            '<button class="tab'+(active==='sum'?' on':'')+'" id="tabSum"><span style="font-weight:700;color:var(--green);font-size:1.35em;line-height:0;vertical-align:-1px">$</span>um</button>' +
+    function tabBar(active) {
+    var bbLabel = 'Mem<span style="font-weight:700;color:var(--red)">BB</span>ers <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;opacity:.6;margin-left:4px"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+    var infoLabel = 'My Info';
+    var sumLabel = '<span style="font-weight:700;color:var(--green);font-size:1.35em;line-height:0;vertical-align:-1px">$</span>um';
+    var annDot = (annBadgeCount>0 && active!=='announce');
+    var tabs = [
+      {id:'tabInfo', label:infoLabel, on:active==='info'||active==='edit'},
+      {id:'tabDir', label:'Directory', on:active==='directory'||active==='directory_blocked'},
+      {id:'tabAnn', label:'Announce', badge:annDot, on:active==='announce'}
+    ];
+    if (state._eventsEnabled!==false) tabs.push({id:'tabEvents', label:'Events', on:active==='events'});
+    if (state._decideEnabled!==false) tabs.push({id:'tabDecide', label:'Decide', on:active==='decide'});
+    tabs.push({id:'tabBB', label:bbLabel, on:active==='bulletin'});
+    tabs.push({id:'tabSum', label:sumLabel, on:active==='sum'});
+    var nav = tabs.slice();
+    tabs.push({id:'tabUnassigned', label:'Unassigned', off:true});
+    var idx = nav.findIndex(function(t){return t.on;}); if (idx<0) idx=0;
+    var open = !!window._tabDockOpen;
+    var gauge = nav.map(function(t,i){return '<i class="'+(i<idx?'lv':'')+(i===idx?'cur':'')+'"></i>';}).join('');
+    return '<div class="tabdock'+(open?' open':'')+'" id="tabDock">' +
+      '<button type="button" class="td-bar" id="tabDockBar" aria-expanded="'+open+'">' +
+        '<span class="td-label">'+nav[idx].label+'</span>' +
+        (annDot?'<span class="td-dot"></span>':'') +
+        '<span class="td-gauge">'+gauge+'</span>' +
+        '<span class="td-chev">\u25BE</span>' +
+      '</button>' +
+      '<div class="td-panel">' +
+        tabs.map(function(t){return '<button type="button" class="tab'+(t.on?' on':'')+(t.off?' off':'')+'" id="'+t.id+'"'+(t.off?' disabled aria-disabled="true"':'')+'>'+t.label+(t.badge?'<span class="ann-badge">'+annBadgeCount+'</span>':'')+'</button>';}).join('') +
+      '</div>' +
     '</div>';
   }
 
