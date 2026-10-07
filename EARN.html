@@ -117,9 +117,13 @@ html.embed .acts button:first-child{background:var(--amber);color:var(--amber-in
   body *{visibility:hidden}
   .bar{display:none!important}
   #receipt,#receipt *{visibility:visible}
-  #receipt{display:block;position:absolute;left:0;right:0;top:0;margin:0 auto;width:72mm;color:#000;
+  #receipt{display:block;position:absolute;left:0;right:0;top:0;margin:0 auto;width:80mm;color:#000;
     font-family:"IBM Plex Mono","Courier New",Courier,monospace;font-size:8.5pt;line-height:1.35}
 }
+#receipt .r-tear{display:block;width:100%;height:3.2mm;overflow:visible}
+#receipt .r-tear.top{margin-bottom:-1px}
+#receipt .r-tear.bot{margin-top:-1px}
+#receipt .r-paper{border-left:1px solid #000;border-right:1px solid #000;padding:1mm 4mm 2mm}
 #receipt .r-hd{text-align:center;padding:2mm 0 1mm}
 #receipt .r-org{font-size:8pt;letter-spacing:.25em}
 #receipt .r-mou{font-size:15pt;font-weight:700;letter-spacing:.04em;margin-top:1mm}
@@ -646,7 +650,11 @@ function buildReceipt(){
     });
   });
   h+=`<hr class="r-dbl"><div class="r-ft">ESTIMATE ONLY - NOT A PAY STUB<br>APPENDIX C RATES (06/30/2024)<br>2,088-HOUR YEAR<br><br>* * * LAAPOA * * *</div>`;
-  $("receipt").innerHTML=h;
+  const W=288,T=12,H=9;
+  let top="M0,"+H, bot="M0,0";
+  for(let x=0;x<W;x+=T){ top+=` L${x+T/2},0 L${x+T},${H}`; bot+=` L${x+T/2},${H} L${x+T},0`; }
+  const svg=(d,c)=>`<svg class="r-tear ${c}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="#000" stroke-width="1.2" vector-effect="non-scaling-stroke" stroke-linejoin="miter"/></svg>`;
+  $("receipt").innerHTML=svg(top,"top")+`<div class="r-paper">${h}</div>`+svg(bot,"bot");
 }
 $("btnPrint").onclick=()=>{
   buildReceipt();
