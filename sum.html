@@ -56,6 +56,8 @@ select,input[type=number]{width:100%;max-width:100%;min-width:0;text-overflow:el
 .ck{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-radius:8px;cursor:pointer}
 .ck:hover{background:color-mix(in srgb,var(--rule) 30%,transparent)}
 .ck.off{opacity:.42;cursor:not-allowed}
+.ck.lock{opacity:.75;cursor:default}
+.ck.lock:hover{background:none}
 .ck.off:hover{background:none}
 .ck input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--ink);flex:none}
 .ck .t{flex:1}
@@ -243,8 +245,15 @@ const S7=(a)=>a.map((h,i)=>({s:i+1,h}));
 const LONG=(y)=>y>=20?440:y>=15?300:y>=10?160:y>=5?100:0;
 const BIL={label:"Bilingual premium",group:"check",src:"LAAC 4.84",kind:"ATR",pension:true,type:"pctSel",
   options:[["0","None"],["2.75","Conversational (2.75%)"],["5.5","Read, write, interpret (5.5%)"]]};
-const POST={label:"POST certificate",group:"check",kind:"ATR",pension:true,type:"pctSel",
-  options:[["0","Basic (included in base pay)"],["1","Intermediate (1%)"],["3","Advanced (Intermediate 1% + Advanced 2%)"]]};
+const POST={label:"POST certificates",group:"check",kind:"ATR",pension:true,type:"postLadder"};
+const PROBATION=["3225-1","3225-F","3183-1","3183-2"];
+function postLevel(p,c){ // 0 none, 1 Basic, 2 Intermediate, 3 Advanced
+  let v=p.sels.postLvl;
+  if(v===undefined){const old=p.sels.post; v=old==="3"?3:old==="1"?2:1;}
+  v=+v||0;
+  if(!PROBATION.includes(c.code)&&v<1) v=1;
+  return v;
+}
 const OTHER={id:"oatr",label:"Other Adds to Rate",group:"check",src:"Grandfathered or side-letter pay not listed above",kind:"ATR",pension:true,type:"pctIn"};
 const MARKS={label:"Marksmanship",group:"check",kind:"ATP",pension:false,type:"bwSel",
   options:[["0","None"],["8","Marksman ($8)"],["16","Sharpshooter ($16)"],["32","Expert ($32)"],["64","Distinguished Expert ($64)"]]};
@@ -458,6 +467,14 @@ function renderChecks(){
       return `<div class="sel"><label class="f" for="s_${it.id}">${esc(it.label)} ${tagFor(it.kind)} <small>${esc(it.src)}</small></label>
         <select id="s_${it.id}" data-id="${it.id}">${it.options.map(([v,l])=>`<option value="${v}" ${v===cur?"selected":""}>${esc(l)}</option>`).join("")}</select></div>`;
     }
+    if(it.type==="postLadder"){
+      const lv=postLevel(p,c), lock=!PROBATION.includes(c.code), pre=it.alt&&p.checks[it.alt.flag];
+      const tiers=[["Basic","Included in base pay"+(lock?"; applies to all post-probation classes":"")],
+                   ["Intermediate",pre?"+$15.00/BW":"+1%"],["Advanced",pre?"+$15.00/BW, adds to Intermediate":"+2%, adds to Intermediate"]];
+      return `<div class="sel"><div class="f">${esc(it.label)} ${tagFor(it.kind)} <small>${esc(it.src)}</small></div><div class="checks">`+
+        tiers.map(([n,sub],i)=>{const k=i+1,on=lv>=k,off=(k===1&&lock);
+          return `<label class="ck${off?" lock":""}"><input type="checkbox" data-post="${k}" ${on?"checked":""} ${off?"disabled":""}><span class="t">${n} POST<small>${esc(sub)}</small></span></label>`;}).join("")+`</div></div>`;
+    }
     if(it.type==="pctIn"){
       return `<div class="sel"><label class="f" for="n_${it.id}">${esc(it.label)} (%) ${tagFor(it.kind)} <small>${esc(it.src)}</small></label>
         <input type="number" id="n_${it.id}" data-n="${it.id}" min="0" max="50" step="0.25" inputmode="decimal" value="${p.sels[it.id]||""}" placeholder="0"></div>`;
@@ -474,6 +491,9 @@ function renderChecks(){
   }).join("");
   $("checks").innerHTML=html;
   $("checks").querySelectorAll("input[type=checkbox]").forEach(i=>i.onchange=()=>{p.checks[i.dataset.id]=i.checked;save();renderChecks();renderExtras();calc();});
+  $("checks").querySelectorAll("input[data-post]").forEach(i=>i.onchange=()=>{
+    const k=+i.dataset.post; p.sels.postLvl=String(i.checked?k:k-1); save(); renderChecks(); calc();
+  });
   $("checks").querySelectorAll("input[data-n]").forEach(i=>i.oninput=()=>{p.sels[i.dataset.n]=String(Math.max(0,+i.value||0));save();calc();});
   $("checks").querySelectorAll("select").forEach(s=>s.onchange=()=>{p.sels[s.dataset.id]=s.value;save();calc();});
 }
@@ -528,6 +548,13 @@ function calc(){
     if(it.type==="flag") return;
     const arr=it.kind==="ATR"?atr:atp;
     if(it.type==="pctIn"){const v=+(p.sels[it.id]||0);if(v)addPct(arr,it.label,v,it.pension,it.src);return;}
+    if(it.type==="postLadder"){
+      const lv=postLevel(p,c), pre=it.alt&&p.checks[it.alt.flag];
+      [["Intermediate POST",1,2],["Advanced POST",2,3]].forEach(([l,pc,need])=>{
+        if(lv<need) return;
+        if(pre) addBW(arr,`${l} ($${it.alt.v}/BW)`,it.alt.v,it.pension,it.src); else addPct(arr,l,pc,it.pension,it.src);
+      });
+      return;}
     if(it.type==="pctSel"){const v=+(p.sels[it.id]||0);if(!v)return;
       if(it.id==="post"){
         const lv=v>=3?["Intermediate POST","Advanced POST"]:["Intermediate POST"], pc=[1,2];
