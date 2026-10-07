@@ -55,6 +55,8 @@ select,input[type=number]{width:100%;max-width:100%;min-width:0;text-overflow:el
 .checks{display:grid;gap:4px}
 .ck{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-radius:8px;cursor:pointer}
 .ck:hover{background:color-mix(in srgb,var(--rule) 30%,transparent)}
+.ck.off{opacity:.42;cursor:not-allowed}
+.ck.off:hover{background:none}
 .ck input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--ink);flex:none}
 .ck .t{flex:1}
 .ck small{display:block;color:var(--muted);font-size:.8rem}
@@ -312,14 +314,14 @@ const MOU={
    {id:"k9",label:"Canine Unit supervisor",src:"Note 5",pct:()=>11,needs:["SGT"]},
    {id:"esu",label:"Emergency Services Unit",src:"Note 6",pct:()=>5.5,needs:["SGT"]},
    {id:"n7",label:"Specialized assignment ($240/BW)",src:"Note 7",bw:240,needs:["SGT"],
-    sub:"Asst. WC, Range, IA, CTF, DPU, VAAU, Training/Recruitment, EOP, Fleet"}],
+    sub:"Range, IA, CTF, DPU, VAAU, Training/Recruitment, EOP, Fleet"}],
   items:[
    {id:"air",label:"Airfield Hazard Incentive",sub:"Supervises officers receiving airfield pay",group:"check",src:"Note 1",kind:"ATP",pension:false,type:"pct",v:4},
    {id:"post",...POST,src:"Note 2.B-C"},
+   {id:"awc",label:"Assistant Watch Commander (AWC)",sub:"Patrol only; select Patrol under Assignment",group:"check",src:"Note 7",kind:"ATR",pension:true,type:"bw",v:240,needs:["SGT"],enableIf:(p)=>p.assign==="none"},
    {id:"psup",label:"Supervisory POST",group:"check",src:"Note 2.E",kind:"ATR",pension:true,type:"pct",v:3,needs:["SGT","MSGT"]},
    {id:"pmgmt",label:"Management or Supervisory POST",group:"check",src:"Note 2.D",kind:"ATR",pension:true,type:"pct",v:3,needs:["LT"]},
    {id:"avsec",label:"Aviation Security Certification",sub:"Payroll: 10.091 Certification - Aviation Security",group:"check",src:"Note 4",kind:"ATR",pension:true,type:"pct",v:(c)=>c.lvl==="LT"?5.5:2.75},
-   {id:"wcreg",label:"Watch Commander, regularly assigned",sub:"$5.00 per hour on all paid hours",group:"check",src:"Note 8",kind:"ATP",pension:true,type:"hrPay",v:5,needs:["SGT","MSGT"]},
    {id:"bil",...BIL,kind:"ATP",src:"Art. 4.11"},
    OTHER,
    {id:"mk",...MARKS,src:"Art. 4.13"}],
@@ -430,7 +432,7 @@ function renderAssign(){
     let tail="";
     if(a.pct) tail=` (${a.pct(c)}%)`;
     return `<option value="${a.id}" ${a.id===p.assign?"selected":""}>${esc(a.label)}${tail}</option>`;}).join("");
-  $("assign").onchange=(e)=>{p.assign=e.target.value;save();renderAssign();calc();};
+  $("assign").onchange=(e)=>{p.assign=e.target.value;save();renderAssign();renderChecks();calc();};
   const a=opts.find(x=>x.id===p.assign);
   let sub="";
   if(a&&a.sub) sub+=`<p class="note">${esc(a.sub)}</p>`;
@@ -463,9 +465,11 @@ function renderChecks(){
     let val="";
     if(it.type==="pct") val=`+${itemPct(it,c)}%`;
     if(it.type==="hr"||it.type==="hrPay") val=`+${money(it.v)}/hr`;
+    if(it.type==="bw") val=`+${money(it.v)}/BW`;
+    const off=it.enableIf&&!it.enableIf(p);
     if(it.alt&&p.checks[it.alt.flag]) val=`+${money(it.alt.v)}/BW`;
     const subline=[it.sub,it.src,val].filter(Boolean).join(", ");
-    return `<label class="ck"><input type="checkbox" data-id="${it.id}" ${p.checks[it.id]?"checked":""}>
+    return `<label class="ck${off?" off":""}"><input type="checkbox" data-id="${it.id}" ${p.checks[it.id]&&!off?"checked":""} ${off?"disabled":""}>
       <span class="t">${esc(it.label)} ${it.type==="flag"?"":tagFor(it.kind)}<small>${esc(subline)}</small></span></label>`;
   }).join("");
   $("checks").innerHTML=html;
@@ -485,7 +489,7 @@ function renderExtras(){
   f.push(["hol","Hours worked on a holiday"]);
   const sb=x.standby===true||(x.standby&&x.standby===c.lvl);
   if(sb) f.push(["sb","Standby hours (1 hr per 6)"]);
-  if(x.wc&&(c.lvl==="SGT"||c.lvl==="MSGT")&&!p.checks.wcreg) f.push(["wc","Hours as acting Watch Commander ($5/hr)"]);
+  if(x.wc&&(c.lvl==="SGT"||c.lvl==="MSGT")) f.push(["wc","Hours as acting Watch Commander ($5/hr)"]);
   $("extras").innerHTML=f.map(([k,l])=>`<div><label class="f" for="x_${k}">${l}</label><input type="number" id="x_${k}" data-k="${k}" min="0" step="0.5" inputmode="decimal" value="${p.ex[k]||""}" placeholder="0"></div>`).join("");
   $("extras").querySelectorAll("input").forEach(i=>i.oninput=()=>{p.ex[i.dataset.k]=Math.max(0,+i.value||0);save();calc();});
   $("otRule").textContent=m.otRule;
@@ -533,6 +537,8 @@ function calc(){
       addPct(arr,it.label,v,it.pension,it.src);return;}
     if(it.type==="bwSel"){const v=+(p.sels[it.id]||0);if(v)arr.push({label:`${it.label}`,bw:v,pension:false,src:it.src});return;}
     if(!p.checks[it.id]) return;
+    if(it.enableIf&&!it.enableIf(p)) return;
+    if(it.type==="bw"){addBW(arr,`${it.label} ($${it.v}/BW)`,it.v,it.pension,it.src);return;}
     if(it.alt&&p.checks[it.alt.flag]){addBW(arr,`${it.label} ($${it.alt.v}/BW)`,it.alt.v,it.pension,it.src);return;}
     if(it.type==="pct") addPct(arr,it.label,itemPct(it,c),it.pension,it.src);
     if(it.type==="hrPay"){arr.push({label:`${it.label} ($${it.v}/hr × 80)`,bw:it.v*80,pension:it.pension,src:it.src});return;}
@@ -548,7 +554,7 @@ function calc(){
   }
   // WC hours (MOU 39 Note 8: pensionable, Adds to Pay)
   const ex=p.ex||{};
-  if(m.extras.wc&&(c.lvl==="SGT"||c.lvl==="MSGT")&&ex.wc&&!p.checks.wcreg) atp.push({label:`Acting Watch Commander, ${ex.wc} hrs at $5`,bw:ex.wc*5,pension:true,src:"Note 8"});
+  if(m.extras.wc&&(c.lvl==="SGT"||c.lvl==="MSGT")&&ex.wc) atp.push({label:`Acting Watch Commander, ${ex.wc} hrs at $5`,bw:ex.wc*5,pension:true,src:"Note 8"});
   // uniform note (annual only)
   const uni=m.uniform(c)?1525:0;
 
