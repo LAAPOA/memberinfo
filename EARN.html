@@ -42,12 +42,12 @@ h1{font-family:var(--cond);font-weight:700;font-size:1.75rem;line-height:1.1;mar
 .mous span{display:block;font-size:.75rem;color:var(--muted);margin-top:3px}
 .mous button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink)}
 .mous button[aria-pressed="true"] span{color:var(--amber-ink)}
-.grid{display:grid;grid-template-columns:1fr;gap:16px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 @media (min-width:900px){.grid{grid-template-columns:minmax(0,1fr) 400px}.stubcol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);align-self:start}}
 section.panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;margin-bottom:12px}
 h2{font-family:var(--cond);font-size:1.15rem;font-weight:600;margin:0 0 10px}
 label.f{display:block;font-size:.85rem;color:var(--muted);margin:10px 0 4px}
-select,input[type=number]{width:100%;background:var(--field);border:1px solid var(--rule);border-radius:8px;padding:10px;min-height:44px}
+select,input[type=number]{width:100%;max-width:100%;min-width:0;text-overflow:ellipsis;background:var(--field);border:1px solid var(--rule);border-radius:8px;padding:10px;min-height:44px}
 .steps{display:flex;flex-wrap:wrap;gap:6px}
 .steps button{min-width:44px;min-height:44px;border:1px solid var(--rule);background:var(--field);border-radius:8px;cursor:pointer;font-weight:600}
 .steps button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
@@ -137,6 +137,30 @@ html.embed .acts button:first-child{background:var(--amber);color:var(--amber-in
 #receipt .r-grand{font-weight:700;font-size:12pt}
 #receipt .r-c{text-align:center}
 #receipt .r-ft{text-align:center;font-size:7pt;margin-top:2mm}
+/* compact phone layout */
+main,aside,.stubcol,section.panel{min-width:0}
+@media (max-width:480px){
+  .wrap{padding:10px 10px 90px}
+  h1{font-size:1.4rem}
+  section.panel{padding:12px;margin-bottom:10px;border-radius:10px}
+  h2{font-size:1.05rem;margin-bottom:6px}
+  .mous button{padding:8px 2px}
+  .mous b{font-size:1.05rem}
+  .mous span{font-size:.68rem}
+  .steps{gap:5px}
+  .steps button{min-width:38px;min-height:40px}
+  .two{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 8px}
+  label.f{font-size:.8rem}
+  .ck{padding:6px 2px}
+  .stub .hd,.blk{padding-left:12px;padding-right:12px}
+  .big div{padding:10px 12px}
+  .big strong{font-size:1.45rem}
+  .row{font-size:.86rem}
+  .bar{padding-left:12px;padding-right:12px;gap:8px}
+  .bar b{font-size:1.1rem}
+  .bar a{font-size:.85rem;white-space:nowrap}
+}
+html.embed .wrap{padding:0 0 4px}
 </style>
 </head>
 <body>
@@ -240,8 +264,8 @@ const MOU={
 
  "30":{tab:"MOU 30",short:"APOs",title:"Airport Peace Officers",
   classes:[
-   {code:"3225-1",name:"Airport Police Officer I",steps:[{s:1,h:37.58}]},
-   {code:"3225-F",name:"Airport Police Officer F",steps:[{s:1,h:39.62}]},
+   {code:"3225-1",name:"Airport Police Officer I",steps:[{s:2,h:44.12}],note:"Paid at APO II step 2 per Art. 6.1.B and 6.1.D (eff. 7/16/2023)"},
+   {code:"3225-F",name:"Airport Police Officer F",steps:[{s:2,h:44.12}],note:"Paid at APO II step 2 per Art. 6.1.B and 6.1.D (eff. 7/16/2023)"},
    {code:"3225-2",name:"Airport Police Officer II",lvl:"II",steps:S7([41.79,44.12,46.58,49.18,51.92,54.81,57.87])},
    {code:"3333-0",name:"Airport Police Specialist",lvl:"II",steps:S7([41.79,44.12,46.58,49.18,51.92,54.81,57.87])},
    {code:"3225-3",name:"Airport Police Officer III",lvl:"III",steps:S7([44.17,46.63,49.23,51.97,54.87,57.93,61.16])}],
@@ -528,12 +552,12 @@ function calc(){
 
   /* ---- stub ---- */
   $("stubTitle").textContent=`${m.tab}: ${c.name}`;
-  $("stubSub").textContent=`Class ${c.code}, step ${p.step}, base ${money(H)}/hr`;
+  $("stubSub").textContent=`Class ${c.code}, step ${p.step}${c.note?" (APO II rate)":""}, base ${money(H)}/hr`;
   $("kRate").textContent=rate4(rate);
   $("kBW").textContent=money(regBW+otBW);
   $("barBW").textContent=money(regBW+otBW);
   $("barOT").textContent=rate4(ot);
-  $("baseline").textContent=`Step ${p.step}: ${money(H)}/hr, ${money(H*80)} biweekly, ${money(H*2088)} a year`;
+  $("baseline").textContent=`Step ${p.step}: ${money(H)}/hr, ${money(H*80)} biweekly, ${money(H*2088)} a year`+(c.note?`. ${c.note}.`:"");
 
   const row=(r,amt)=>`<div class="row"><span>${esc(r.label)}${r.pension===undefined?"":`<span class="p ${r.pension?"y":"n"}">${r.pension?"pensionable":"non-pensionable"}</span>`}</span><span>${money(amt)}</span></div>`;
   let h="";
