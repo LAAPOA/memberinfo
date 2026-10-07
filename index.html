@@ -181,14 +181,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .cf-btn-add{background:var(--gold);color:var(--navy)}
 /* Tab dock: gauge bar that expands to all tabs */
 .tabdock{margin-bottom:16px;border:1px solid var(--border-bright);border-radius:var(--radius);background:var(--navy);overflow:hidden}
-.td-bar{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:8px 14px;background:none;border:0;color:var(--gold);font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left}
-.td-label{white-space:nowrap;flex:none}
+.td-bar{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:4px 6px 4px 14px}
+.td-label{white-space:nowrap;flex:none;color:var(--gold);font-size:15px;font-weight:600;cursor:pointer}
 .td-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex:none}
-.td-gauge{flex:1;display:flex;gap:3px;align-items:center;height:12px;min-width:60px}
-.td-gauge i{flex:1;height:6px;border-radius:2px;background:rgba(198,151,63,.15);transition:all .2s}
-.td-gauge i.lv{background:rgba(198,151,63,.45)}
-.td-gauge i.cur{height:12px;background:var(--gold);box-shadow:0 0 6px rgba(198,151,63,.6)}
-.td-chev{flex:none;font-size:13px;color:var(--text-dim);transition:transform .25s}
+.td-gauge{flex:1;display:flex;gap:3px;align-items:center;min-width:60px}
+.td-seg{flex:1;height:32px;padding:0;margin:0;border:0;background:none;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}
+.td-seg::before{content:"";position:absolute;left:0;right:0;top:50%;height:6px;transform:translateY(-50%);border-radius:2px;background:rgba(198,151,63,.15);transition:all .2s}
+.td-seg.lv::before{background:rgba(198,151,63,.45)}
+.td-seg.cur::before{height:12px;background:var(--gold);box-shadow:0 0 6px rgba(198,151,63,.6)}
+.td-seg:active::before{background:var(--gold-light,#D4AD5E)}
+.td-chev{flex:none;width:44px;height:44px;border:0;border-radius:8px;background:none;color:var(--gold);font-size:26px;line-height:1;cursor:pointer;transition:transform .25s,background .15s;display:flex;align-items:center;justify-content:center}
+.td-chev:active{background:rgba(198,151,63,.15)}
 .tabdock.open .td-chev{transform:rotate(180deg)}
 .td-panel{display:grid;grid-template-columns:1fr 1fr;max-height:0;overflow:hidden;transition:max-height .25s ease}
 .tabdock.open .td-panel{max-height:420px;border-top:1px solid var(--border)}
@@ -728,32 +731,32 @@ window.addEventListener('message',function(e){
   function render() {
   const app = document.getElementById('app');
 
-    function tabBar(active) {
+      function tabBar(active) {
     var bbLabel = 'Mem<span style="font-weight:700;color:var(--red)">BB</span>ers <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;opacity:.6;margin-left:4px"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
     var infoLabel = 'My Info';
     var sumLabel = '<span style="font-weight:700;color:var(--green);font-size:1.35em;line-height:0;vertical-align:-1px">$</span>um';
     var annDot = (annBadgeCount>0 && active!=='announce');
     var tabs = [
-      {id:'tabInfo', label:infoLabel, on:active==='info'||active==='edit'},
-      {id:'tabDir', label:'Directory', on:active==='directory'||active==='directory_blocked'},
-      {id:'tabAnn', label:'Announce', badge:annDot, on:active==='announce'}
+      {id:'tabInfo', name:'My Info', label:infoLabel, on:active==='info'||active==='edit'},
+      {id:'tabDir', name:'Directory', label:'Directory', on:active==='directory'||active==='directory_blocked'},
+      {id:'tabAnn', name:'Announce', label:'Announce', badge:annDot, on:active==='announce'}
     ];
-    if (state._eventsEnabled!==false) tabs.push({id:'tabEvents', label:'Events', on:active==='events'});
-    if (state._decideEnabled!==false) tabs.push({id:'tabDecide', label:'Decide', on:active==='decide'});
-    tabs.push({id:'tabBB', label:bbLabel, on:active==='bulletin'});
-    tabs.push({id:'tabSum', label:sumLabel, on:active==='sum'});
+    if (state._eventsEnabled!==false) tabs.push({id:'tabEvents', name:'Events', label:'Events', on:active==='events'});
+    if (state._decideEnabled!==false) tabs.push({id:'tabDecide', name:'Decide', label:'Decide', on:active==='decide'});
+    tabs.push({id:'tabBB', name:'MemBBers', label:bbLabel, on:active==='bulletin'});
+    tabs.push({id:'tabSum', name:'$um', label:sumLabel, on:active==='sum'});
     var nav = tabs.slice();
     tabs.push({id:'tabUnassigned', label:'Unassigned', off:true});
     var idx = nav.findIndex(function(t){return t.on;}); if (idx<0) idx=0;
     var open = !!window._tabDockOpen;
-    var gauge = nav.map(function(t,i){return '<i class="'+(i<idx?'lv':'')+(i===idx?'cur':'')+'"></i>';}).join('');
+    var gauge = nav.map(function(t,i){return '<button type="button" class="td-seg'+(i<idx?' lv':'')+(i===idx?' cur':'')+'" data-go="'+t.id+'" aria-label="'+t.name+'" title="'+t.name+'"></button>';}).join('');
     return '<div class="tabdock'+(open?' open':'')+'" id="tabDock">' +
-      '<button type="button" class="td-bar" id="tabDockBar" aria-expanded="'+open+'">' +
-        '<span class="td-label">'+nav[idx].label+'</span>' +
+      '<div class="td-bar">' +
+        '<span class="td-label" id="tabDockLabel">'+nav[idx].label+'</span>' +
         (annDot?'<span class="td-dot"></span>':'') +
         '<span class="td-gauge">'+gauge+'</span>' +
-        '<span class="td-chev">\u25BE</span>' +
-      '</button>' +
+        '<button type="button" class="td-chev" id="tabDockBar" aria-label="Show all tabs" aria-expanded="'+open+'">\u25BE</button>' +
+      '</div>' +
       '<div class="td-panel">' +
         tabs.map(function(t){return '<button type="button" class="tab'+(t.on?' on':'')+(t.off?' off':'')+'" id="'+t.id+'"'+(t.off?' disabled aria-disabled="true"':'')+'>'+t.label+(t.badge?'<span class="ann-badge">'+annBadgeCount+'</span>':'')+'</button>';}).join('') +
       '</div>' +
@@ -761,16 +764,27 @@ window.addEventListener('message',function(e){
   }
 
   function wireTabEvents() {
-           var dockBar=document.getElementById('tabDockBar');
-       if(dockBar)dockBar.addEventListener('click',function(){
-         window._tabDockOpen=!window._tabDockOpen;
-         var d=document.getElementById('tabDock');
-         if(d)d.classList.toggle('open',window._tabDockOpen);
-         dockBar.setAttribute('aria-expanded',window._tabDockOpen?'true':'false');
-       });
-       document.querySelectorAll('#tabDock .td-panel .tab').forEach(function(b){
-         b.addEventListener('click',function(){window._tabDockOpen=false;});
-       });
+    function toggleDock(){
+      window._tabDockOpen=!window._tabDockOpen;
+      var d=document.getElementById('tabDock');
+      if(d)d.classList.toggle('open',window._tabDockOpen);
+      var c=document.getElementById('tabDockBar');
+      if(c)c.setAttribute('aria-expanded',window._tabDockOpen?'true':'false');
+    }
+    var dockBar=document.getElementById('tabDockBar');
+    if(dockBar)dockBar.addEventListener('click',toggleDock);
+    var dockLabel=document.getElementById('tabDockLabel');
+    if(dockLabel)dockLabel.addEventListener('click',toggleDock);
+    document.querySelectorAll('#tabDock .td-panel .tab').forEach(function(b){
+      b.addEventListener('click',function(){window._tabDockOpen=false;});
+    });
+    document.querySelectorAll('#tabDock .td-seg').forEach(function(s){
+      s.addEventListener('click',function(){
+        window._tabDockOpen=false;
+        var t=document.getElementById(s.getAttribute('data-go'));
+        if(t)t.click();
+      });
+    });
     var ti=document.getElementById('tabInfo');
     var td=document.getElementById('tabDir');
     var ta=document.getElementById('tabAnn');
