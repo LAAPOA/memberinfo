@@ -179,6 +179,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .cf-actions{padding:16px 28px 24px;display:flex;flex-direction:column;gap:10px}
 .cf-btn{padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;font-family:inherit;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
 .cf-btn-add{background:var(--gold);color:var(--navy)}
+/* Tab dock: gauge bar that expands to all tabs */
+.tabdock{margin-bottom:16px;border:1px solid var(--border-bright);border-radius:var(--radius);background:var(--navy);overflow:hidden}
+.td-bar{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:8px 14px;background:none;border:0;color:var(--gold);font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left}
+.td-label{white-space:nowrap;flex:none}
+.td-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex:none}
+.td-gauge{flex:1;display:flex;gap:3px;align-items:center;height:12px;min-width:60px}
+.td-gauge i{flex:1;height:6px;border-radius:2px;background:rgba(198,151,63,.15);transition:all .2s}
+.td-gauge i.lv{background:rgba(198,151,63,.45)}
+.td-gauge i.cur{height:12px;background:var(--gold);box-shadow:0 0 6px rgba(198,151,63,.6)}
+.td-chev{flex:none;font-size:13px;color:var(--text-dim);transition:transform .25s}
+.tabdock.open .td-chev{transform:rotate(180deg)}
+.td-panel{display:grid;grid-template-columns:1fr 1fr;max-height:0;overflow:hidden;transition:max-height .25s ease}
+.tabdock.open .td-panel{max-height:420px;border-top:1px solid var(--border)}
+.td-panel .tab{flex:none;font-size:14px;padding:12px 8px;min-height:48px;white-space:nowrap;box-shadow:inset -1px -1px 0 var(--border)}
+.td-panel .tab:last-child:nth-child(odd){grid-column:1/-1}
+.td-panel .ann-badge{top:8px;right:10px}
+.td-panel .tab.off{opacity:.35;cursor:not-allowed;font-style:italic}
 </style>
 <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 </head>
