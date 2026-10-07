@@ -272,7 +272,7 @@ const MOU={
   longevity:{kind:"ATR",pension:true,src:"Art. 6.2"},
   uniform:()=>true,
   assign:[
-   {id:"none",label:"No assignment pay"},
+   {id:"none",label:"Patrol or other non-incentivized detail"},
    {id:"motor",label:"Motors",src:"Note 2",pct:(c)=>c.lvl==="II"?11:5.5,needs:["II","III"]},
    {id:"k9",label:"Canine handler",src:"Note 3",pct:()=>16.5},
    {id:"det",label:"Detective",src:"Note 7",pct:(c)=>c.lvl==="II"?11:5.5,needs:["II","III"]},
@@ -304,7 +304,7 @@ const MOU={
   longevity:null,
   uniform:()=>true,
   assign:[
-   {id:"none",label:"No assignment pay"},
+   {id:"none",label:"Patrol or other non-incentivized detail"},
    {id:"motor",label:"Motors",src:"Note 3",pct:()=>11,needs:["SGT"]},
    {id:"k9",label:"Canine Unit supervisor",src:"Note 5",pct:()=>11,needs:["SGT"]},
    {id:"esu",label:"Emergency Services Unit",src:"Note 6",pct:()=>5.5,needs:["SGT"]},
@@ -330,8 +330,8 @@ const MOU={
    {code:"1967-2",name:"Senior Park Ranger II",lvl:"SPR",steps:S7([40.71,42.98,45.38,47.91,50.58,53.40,56.38])}],
   longevity:{kind:"ATR",pension:true,src:"Art. 6.2"},
   uniform:()=>true,
+  stackAssign:true,
   assign:[
-   {id:"none",label:"No assignment pay"},
    {id:"fto",label:"Field Training Officer ($200/BW)",src:"Art. 6.4",bw:200,needs:["PR"]},
    {id:"eng",label:"Engine / Water Tender Operator",src:"Note 1",pct:()=>5.5},
    {id:"slo",label:"Senior Lead Officer",src:"Note 2",pct:()=>5.5},
@@ -409,6 +409,19 @@ function renderAssign(){
   if(!m.assign){$("assignPanel").style.display="none";return;}
   $("assignPanel").style.display="";
   const opts=m.assign.filter(a=>allowed(a,c));
+  if(m.stackAssign){
+    p.assignSet=p.assignSet||{};
+    $("assign").style.display="none";
+    $("assignSub").innerHTML=`<p class="note" style="margin:0 0 4px">Select every assignment that applies; incentives stack.</p><div class="checks">`+
+      opts.map(a=>{
+        const val=a.pct?`+${a.pct(c)}%`:(a.bw?`+$${a.bw}/BW`:"");
+        const pen=a.pension===false?"non-pensionable":"pensionable";
+        return `<label class="ck"><input type="checkbox" data-as="${a.id}" ${p.assignSet[a.id]?"checked":""}><span class="t">${esc(a.label.replace(/\s*\(\$.*\)/,""))} ${tagFor("ATR")}<small>${esc([a.src,val,pen].join(", "))}</small></span></label>`;
+      }).join("")+`</div>`;
+    $("assignSub").querySelectorAll("input[data-as]").forEach(i=>i.onchange=()=>{p.assignSet[i.dataset.as]=i.checked;save();calc();});
+    return;
+  }
+  $("assign").style.display="";
   if(!opts.find(a=>a.id===p.assign)) p.assign="none";
   $("assign").innerHTML=opts.map(a=>{
     let tail="";
@@ -484,7 +497,13 @@ function calc(){
   const addBW=(arr,label,bw,pension,src)=>arr.push({label,hr:bw/80,bw,pension,src});
 
   // assignment
-  if(m.assign){
+  if(m.assign&&m.stackAssign){
+    m.assign.filter(a=>allowed(a,c)&&(p.assignSet||{})[a.id]).forEach(a=>{
+      const pen=a.pension!==false;
+      if(a.pct) addPct(atr,a.label,a.pct(c),pen,a.src);
+      if(a.bw) addBW(atr,a.label.replace(/\s*\(\$.*\)/,""),a.bw,pen,a.src);
+    });
+  } else if(m.assign){
     const a=m.assign.find(x=>x.id===p.assign&&allowed(x,c));
     if(a&&a.id!=="none"){
       const pen=a.pension!==false;
