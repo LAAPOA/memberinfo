@@ -761,6 +761,16 @@ window.addEventListener('message',function(e){
   }
 
   function wireTabEvents() {
+           var dockBar=document.getElementById('tabDockBar');
+       if(dockBar)dockBar.addEventListener('click',function(){
+         window._tabDockOpen=!window._tabDockOpen;
+         var d=document.getElementById('tabDock');
+         if(d)d.classList.toggle('open',window._tabDockOpen);
+         dockBar.setAttribute('aria-expanded',window._tabDockOpen?'true':'false');
+       });
+       document.querySelectorAll('#tabDock .td-panel .tab').forEach(function(b){
+         b.addEventListener('click',function(){window._tabDockOpen=false;});
+       });
     var ti=document.getElementById('tabInfo');
     var td=document.getElementById('tabDir');
     var ta=document.getElementById('tabAnn');
