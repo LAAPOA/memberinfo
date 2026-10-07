@@ -113,11 +113,10 @@ html.embed .acts button:first-child{background:var(--amber);color:var(--amber-in
 #receipt{display:none}
 @media print{
   @page{size:auto;margin:8mm}
-  html,body{background:#fff!important}
-  body *{visibility:hidden}
-  .bar{display:none!important}
-  #receipt,#receipt *{visibility:visible}
-  #receipt{display:block;position:absolute;left:0;right:0;top:0;margin:0 auto;width:80mm;color:#000;
+  html,body{background:#fff!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible!important}
+  :root{padding:0!important}
+  .wrap,.bar{display:none!important}
+  #receipt{display:block;position:static;margin:0 auto;width:80mm;break-inside:avoid;page-break-inside:avoid;color:#000;
     font-family:"IBM Plex Mono","Courier New",Courier,monospace;font-size:8.5pt;line-height:1.35}
 }
 #receipt .r-tear{display:block;width:100%;height:3.2mm;overflow:visible}
