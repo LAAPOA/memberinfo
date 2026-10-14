@@ -207,6 +207,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 
 <script>
 const API_URL = 'https://laapoa-api.mike-a78.workers.dev/';
+const LIVE_CHAT_URL = 'https://chat.laapoa.org/';   // meeting-day Live tab (video + member chat)
 const BLOCKED = ['@lawa.org','@lacity.org','@lacity.com','@lapd.online'];
 
 const RANK_OPTIONS = [
@@ -233,7 +234,7 @@ try {
 var _deepTab = (location.hash || '').replace('#','').toLowerCase();
 if (_deepTab === 'earn') _deepTab = 'sum';
 if (state.tab === 'earn') state.tab = 'sum';
-var _validTabs = ['events','decide','bulletin','announce','directory','info','sum'];if (_validTabs.indexOf(_deepTab) >= 0) {
+var _validTabs = ['events','decide','bulletin','announce','directory','info','sum','live'];if (_validTabs.indexOf(_deepTab) >= 0) {
   if (state.token && state.member) { state.tab = _deepTab; }
   else { try { sessionStorage.setItem('laapoa_deep_tab', _deepTab); } catch(e) {} }
   try { history.replaceState(null, '', location.pathname + location.search); } catch(e) {}
@@ -306,6 +307,8 @@ async function handleLogin(e) {
   state._birthdays = res.birthdays || null;
   state._eventsEnabled = res.announcements ? res.announcements.eventsEnabled : true;
   state._decideEnabled = res.announcements ? res.announcements.decideEnabled : true;
+  state._meetingChat = !!(res.announcements && res.announcements.meetingChat);
+  state._liveVideo = (res.announcements && res.announcements.videoUrl) || '';
 
   var _pendingTab = 'announce';
   try { var _pt = sessionStorage.getItem('laapoa_deep_tab'); if (_pt) { _pendingTab = _pt; sessionStorage.removeItem('laapoa_deep_tab'); } } catch(e) {}
@@ -475,11 +478,28 @@ let annLastSeen=parseInt(localStorage.getItem('laapoa_ann_seen')||'0');
 // Pusher live wheel
 var pusherInstance=null;
 var pusherChannel=null;
+function fitLive(){
+  var f=document.getElementById('liveFrame');
+  if(!f)return;
+  var top=f.getBoundingClientRect().top+window.scrollY;
+  f.style.height=Math.max(420,(window.visualViewport?window.visualViewport.height:window.innerHeight)-Math.min(top,window.innerHeight*.45)-14)+'px';
+}
+window.addEventListener('resize',fitLive);
+if(window.visualViewport)window.visualViewport.addEventListener('resize',fitLive);
+
 function initPusher(){
   if(pusherInstance)return;
   try{
     pusherInstance=new Pusher('809d81c32998580a867c',{cluster:'us3',forceTLS:true});
     pusherChannel=pusherInstance.subscribe('laapoa-giveaway');
+    pusherChannel.bind('meeting',function(data){
+      var on=!!(data&&data.enabled);
+      if(data&&data.videoUrl!==undefined)state._liveVideo=data.videoUrl||'';
+      if(on===!!state._meetingChat)return;
+      state._meetingChat=on;
+      if(!on&&state.tab==='live'){setState({tab:'announce'});return;}
+      if(state.tab!=='live')render();
+    });
     pusherChannel.bind('spin',function(data){
       if(state.tab==='events'){showLiveWheel(data);}
       else{window._pendingSpin=data;}
@@ -741,6 +761,7 @@ window.addEventListener('message',function(e){
       {id:'tabDir', name:'Directory', label:'Directory', on:active==='directory'||active==='directory_blocked'},
       {id:'tabAnn', name:'Announce', label:'Announce', badge:annDot, on:active==='announce'}
     ];
+    if (state._meetingChat) tabs.splice(0,0,{id:'tabLive', name:'Live', label:'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:6px;vertical-align:1px;box-shadow:0 0 0 3px var(--red-dim)"></span>Live', on:active==='live'});
     if (state._eventsEnabled!==false) tabs.push({id:'tabEvents', name:'Events', label:'Events', on:active==='events'});
     if (state._decideEnabled!==false) tabs.push({id:'tabDecide', name:'Decide', label:'Decide', on:active==='decide'});
     tabs.push({id:'tabBB', name:'MemBBers', label:bbLabel, on:active==='bulletin'});
@@ -809,6 +830,8 @@ window.addEventListener('message',function(e){
       setState({tab:'announce'});
     });
     if(te)te.addEventListener('click',function(){setState({tab:'events'});if(window._pendingSpin){showLiveWheel(window._pendingSpin);window._pendingSpin=null;}});
+    var tlv=document.getElementById('tabLive');
+    if(tlv)tlv.addEventListener('click',function(){setState({tab:'live'});});
     var tdc=document.getElementById('tabDecide');
     if(tdc)tdc.addEventListener('click',function(){setState({tab:'decide'});});
     if(tb)tb.addEventListener('click',function(){setState({tab:'bulletin'});});
@@ -827,7 +850,7 @@ window.addEventListener('message',function(e){
         '<button class="btn btn-gold" id="loginBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Verifying...':'Sign In')+'</button>' +
       '<div style="text-align:center;margin-top:18px;font-size:13px;color:var(--text-dim);line-height:1.5">Not a member yet? Submit your enrollment <a href="https://laapoa.github.io/Join_membership/" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline">here</a> to have your eligibility evaluated.</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.9</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     document.getElementById('loginBtn').addEventListener('click', handleLogin);
         var dobEl=document.getElementById('dob');
     if(dobEl){dobEl.addEventListener('click',function(){try{dobEl.showPicker();}catch(e){}});}
@@ -871,7 +894,7 @@ window.addEventListener('message',function(e){
         '<div class="info-row"><span class="info-label">Address</span><span class="info-val" style="white-space:pre-line">'+(fmtAddr?esc(fmtAddr).replace(/\\n/g,'\n'):'—')+'</span></div>' +
         '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.9</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
     document.getElementById('editToggle').addEventListener('click', function(){setState({tab:'edit',error:'',success:''});});
@@ -896,7 +919,7 @@ window.addEventListener('message',function(e){
           (ds.countdownMs>0?'<div id="countdown" style="margin-top:20px;font-family:\'JetBrains Mono\',monospace;font-size:36px;color:var(--gold);letter-spacing:2px"></div><div style="font-size:11px;color:var(--text-muted);margin-top:6px">until access is restored</div>':'') +
         '</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.9</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
 
@@ -979,7 +1002,7 @@ window.addEventListener('message',function(e){
         '<div class="search-input"><input id="searchQ" type="text" placeholder="Search by name or serial #..." value="'+esc(searchQuery)+'" autocomplete="off"></div>' +
         '<div id="searchResults">' + resultsHtml + '</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.9</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
     const sq = document.getElementById('searchQ');
@@ -1037,7 +1060,7 @@ window.addEventListener('message',function(e){
         tabBar('announce') +
         '<div id="annContent">'+annHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.9</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     // Load announcements and birthdays together
@@ -1094,6 +1117,11 @@ window.addEventListener('message',function(e){
       var announcementOrder = annRes.announcementOrder || [];
       var videoUrl = annRes.videoUrl || '';
       var videoEnabled = annRes.videoEnabled || false;
+      if (annRes.meetingChat !== undefined) {
+        state._liveVideo = videoUrl;
+        if (!!annRes.meetingChat !== !!state._meetingChat) { state._meetingChat = !!annRes.meetingChat; setTimeout(render, 0); return; }
+      }
+      if (state._meetingChat) videoEnabled = true;
 
       if (posts.length === 0 && !bdayHtml && !videoEnabled) {
         el.innerHTML = '<div class="search-empty">No announcements yet</div>';
@@ -1108,7 +1136,11 @@ window.addEventListener('message',function(e){
 
       // Build video embed HTML
       var videoHtml = '';
-      if (videoEnabled && videoUrl) {
+      if (state._meetingChat) {
+        videoEnabled = true;
+        videoHtml = '<button type="button" onclick="setState({tab:\'live\'})" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-bottom:10px;padding:16px;border-radius:var(--radius-lg);border:1px solid var(--red);background:linear-gradient(135deg,rgba(192,57,43,.25),var(--surface));color:var(--text);font:600 16px \'DM Sans\',sans-serif;cursor:pointer"><span style="width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 0 4px var(--red-dim)"></span>Meeting is LIVE \u2014 watch &amp; chat</button>';
+      }
+      else if (videoEnabled && videoUrl) {
         var embedUrl = videoUrl;
         var ytMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/live\/)([^&\s?]+)/);
         if (ytMatch) embedUrl = 'https://www.youtube.com/embed/' + ytMatch[1] + '?autoplay=0&rel=0';
@@ -1156,7 +1188,7 @@ window.addEventListener('message',function(e){
         tabBar('events') +
         '<div id="eventsContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading events...</div></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.9</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     function loadEvents(){
@@ -1315,7 +1347,7 @@ window.addEventListener('message',function(e){
         tabBar('decide') +
         '<div id="decideContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading votes...</div></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.9</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     apiCall('getVotes',{token:state.token,mou:m.mou,cid:m.cid}).then(function(res){
@@ -1528,6 +1560,33 @@ window.addEventListener('message',function(e){
     return;
   }
 
+  // Live meeting tab: video (with pop-out) + member chat, hosted at chat.laapoa.org
+  if (state.tab === 'live') {
+    if (!state._meetingChat) { state.tab = 'announce'; render(); return; }
+    app.innerHTML =
+      '<div class="card" style="padding-bottom:8px">' +
+        '<div class="member-header">' +
+          '<div class="avatar">'+initials+'</div>' +
+          '<div><div class="member-name">'+esc(m.name)+'</div>' +
+          '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' \u00b7 '+esc(m.mou):'')+'</div></div>' +
+        '</div>' +
+        tabBar('live') +
+        '<div id="liveBox" style="border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:#081426">' +
+          '<div style="text-align:center;padding:30px;color:var(--text-muted)">Joining the meeting...</div>' +
+        '</div>' +
+      '</div>';
+    wireTabEvents();
+    apiCall('chatPass',{token:state.token}).then(function(r){
+      var box=document.getElementById('liveBox');
+      if(!box||state.tab!=='live')return;
+      if(!r||!r.ok||!r.pass){box.innerHTML='<div class="err" style="margin:14px">'+esc((r&&r.error)||'Live chat is not available right now')+'</div>';return;}
+      var v=r.videoUrl!==undefined?r.videoUrl:(state._liveVideo||'');
+      box.innerHTML='<iframe id="liveFrame" title="Live meeting" src="'+LIVE_CHAT_URL+'#embed=1&v='+encodeURIComponent(v)+'&pass='+encodeURIComponent(r.pass)+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-write" allowfullscreen style="display:block;width:100%;border:0;background:#081426"></iframe>';
+      fitLive();
+    });
+    return;
+  }
+
     // tab view (compensation calculator)
   if (state.tab === 'sum') {
     app.innerHTML =
@@ -1540,7 +1599,7 @@ window.addEventListener('message',function(e){
         tabBar('sum') +
         '<iframe id="sumFrame" title="Compensation calculator" src="sum.html?embed=1&mou='+encodeURIComponent(m.mou||'')+'&rank='+encodeURIComponent(m.rank||'')+'&name='+encodeURIComponent(m.name||'')+'" style="width:100%;min-height:700px;border:0;display:block;background:transparent"></iframe>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.9</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     return;
   }
@@ -1603,7 +1662,7 @@ window.addEventListener('message',function(e){
         '</div>' +
         '<div id="bbContent">'+bbHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.0.9</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     // Wire three-dot menu
     document.getElementById('bbMenuBtn').addEventListener('click',function(ev){
@@ -1972,7 +2031,7 @@ window.addEventListener('message',function(e){
         '<button class="btn btn-gold" id="saveBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Saving...':'Save Changes')+'</button>' +
       '</div>' +
     '</div>' +
-    '<div class="footer"><span style="opacity:.5">ver 1.0.8</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+    '<div class="footer"><span style="opacity:.5">ver 1.0.9</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
   document.getElementById('saveBtn').addEventListener('click', handleUpdate);
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
