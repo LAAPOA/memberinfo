@@ -199,6 +199,48 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .td-panel .tab:last-child:nth-child(odd){grid-column:1/-1}
 .td-panel .ann-badge{top:8px;right:10px}
 .td-panel .tab.off{opacity:.35;cursor:not-allowed;font-style:italic}
+/* ---------- Live tab ---------- */
+.lv-card{padding-bottom:110px!important}
+.lv-vid{position:sticky;top:0;z-index:30;margin:0 -24px 12px;background:#000;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.lv-box{position:relative;width:100%;aspect-ratio:16/9;max-height:42vh;max-height:42dvh;margin:0 auto;background:#000}
+.lv-box iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.lv-wait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;text-align:center;padding:10px}
+.lv-bar{display:flex;align-items:center;gap:8px;padding:6px 12px;background:#050d1a;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-dim)}
+.lv-badge{font-weight:700;font-size:10px;letter-spacing:2px;color:#fff;background:var(--red);padding:3px 7px;border-radius:4px}
+.lv-stat{flex:1}
+.lv-fs{background:var(--surface-raised);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:5px 10px;font:600 12px 'DM Sans',sans-serif;cursor:pointer}
+.lv-vid:fullscreen,.lv-vid.fs{position:fixed;inset:0;z-index:10000;margin:0;display:flex;flex-direction:column;justify-content:center;background:#000}
+.lv-vid:fullscreen .lv-box,.lv-vid.fs .lv-box{flex:1;max-height:none;aspect-ratio:auto}
+.lv-vid.fs .lv-bar{position:absolute;top:0;right:0;background:transparent;border:0}
+.lv-vid.fs .lv-badge,.lv-vid.fs .lv-stat{display:none}
+.lv-list{display:flex;flex-direction:column;gap:10px;min-height:40vh}
+.lv-empty{color:var(--text-muted);text-align:center;font-size:13px;padding:30px 10px}
+.lv-m{max-width:86%;align-self:flex-start}
+.lv-m.mine{align-self:flex-end}
+.lv-m.host{align-self:stretch;max-width:none}
+.lv-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--text-muted);margin:0 4px 3px}
+.lv-m.mine .lv-h{justify-content:flex-end}
+.lv-h b{color:var(--gold-light);font-size:13px}
+.lv-rk{font-size:10px;font-weight:600;color:var(--text);background:var(--surface-raised);padding:1px 6px;border-radius:4px}
+.lv-tag{font-size:9px;font-weight:700;letter-spacing:1.5px;background:var(--gold);color:var(--navy);padding:2px 6px;border-radius:4px}
+.lv-t{background:var(--surface-raised);border:1px solid var(--border);border-radius:4px 14px 14px 14px;padding:8px 12px;font-size:15px;line-height:1.4;color:var(--text);overflow-wrap:anywhere;white-space:pre-wrap}
+.lv-m.mine .lv-t{background:#1c3a66;border-color:#2c5590;border-radius:14px 4px 14px 14px}
+.lv-m.host .lv-t{background:rgba(198,151,63,.15);border-color:var(--border-bright)}
+.lv-input{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:520px;z-index:40;background:rgba(11,26,51,.97);border-top:1px solid var(--border);padding:8px 12px calc(8px + env(safe-area-inset-bottom));box-sizing:border-box}
+.lv-row{display:flex;gap:8px}
+.lv-row textarea{flex:1;min-width:0;resize:none;height:44px;max-height:110px;background:var(--navy);border:1px solid var(--border);border-radius:12px;color:var(--text);font:16px/1.35 'DM Sans',sans-serif;padding:11px 12px;box-sizing:border-box}
+.lv-row textarea:focus{outline:2px solid var(--gold);border-color:transparent}
+.lv-row button{flex:none;width:74px;border:0;border-radius:12px;background:var(--gold);color:var(--navy);font:700 14px 'DM Sans',sans-serif;letter-spacing:1.5px;cursor:pointer}
+.lv-row button:disabled,.lv-row textarea:disabled{opacity:.5}
+.lv-note{display:none;font-size:12px;color:var(--gold-light);text-align:center;margin-bottom:6px}
+.lv-note.on{display:block}
+.lv-note.bad{color:#fff;background:rgba(192,57,43,.35);border:1px solid var(--red);border-radius:8px;padding:8px 10px;font-weight:600}
+/* phone turned sideways: video fills the screen */
+@media (orientation:landscape) and (max-height:520px){
+  body.live-on .lv-vid{position:fixed;inset:0;z-index:10000;margin:0;display:flex;flex-direction:column;justify-content:center}
+  body.live-on .lv-box{flex:1;max-height:none;aspect-ratio:auto}
+  body.live-on .lv-bar,body.live-on .lv-input{display:none}
+}
 </style>
 <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 </head>
@@ -207,7 +249,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 
 <script>
 const API_URL = 'https://laapoa-api.mike-a78.workers.dev/';
-const LIVE_CHAT_URL = 'https://chat.laapoa.org/';   // meeting-day Live tab (video + member chat)
+const LIVE_CHAT_WS = 'wss://chat.laapoa.org/chatws?pass=';   // meeting-day Live tab chat
 const BLOCKED = ['@lawa.org','@lacity.org','@lacity.com','@lapd.online'];
 
 const RANK_OPTIONS = [
@@ -478,14 +520,126 @@ let annLastSeen=parseInt(localStorage.getItem('laapoa_ann_seen')||'0');
 // Pusher live wheel
 var pusherInstance=null;
 var pusherChannel=null;
-function fitLive(){
-  var f=document.getElementById('liveFrame');
-  if(!f)return;
-  var top=f.getBoundingClientRect().top+window.scrollY;
-  f.style.height=Math.max(420,(window.visualViewport?window.visualViewport.height:window.innerHeight)-Math.min(top,window.innerHeight*.45)-14)+'px';
+// ================= LIVE TAB: video + member chat =================
+var LIVE = { ws:null, ping:null, retry:0, timer:null, me:'', open:true, blocked:false, seen:{}, count:0, pass:'', gen:0 };
+function liveStop(){
+  LIVE.gen++;
+  clearInterval(LIVE.ping); clearTimeout(LIVE.timer);
+  if (LIVE.ws) { var w = LIVE.ws; LIVE.ws = null; try { w.close(); } catch(e) {} }
+  LIVE.seen = {}; LIVE.count = 0;
+  if (document.fullscreenElement) { try { document.exitFullscreen(); } catch(e) {} }
 }
-window.addEventListener('resize',fitLive);
-if(window.visualViewport)window.visualViewport.addEventListener('resize',fitLive);
+function liveYtId(v){
+  v = String(v||'').trim();
+  if (/^[\w-]{11}$/.test(v)) return v;
+  var m = v.match(/[?&]v=([\w-]{11})/) || v.match(/youtu\.be\/([\w-]{11})/) || v.match(/\/(?:live|embed|shorts)\/([\w-]{11})/);
+  return m ? m[1] : '';
+}
+function liveAtBottom(){ return (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 140); }
+function liveToBottom(){ window.scrollTo(0, document.documentElement.scrollHeight); }
+function liveNote(t, kind){ var n = document.getElementById('lvNote'); if (!n) return; n.textContent = t || ''; n.className = 'lv-note' + (t ? ' on' : '') + (kind ? ' ' + kind : ''); }
+function liveLock(){
+  var off = !LIVE.open || LIVE.blocked, t = document.getElementById('lvTxt'), b = document.getElementById('lvSend');
+  if (t) { t.disabled = off; t.placeholder = LIVE.blocked ? 'Blocked by the host' : (!LIVE.open ? 'Chat is paused' : 'Write a message\u2026'); }
+  if (b) b.disabled = off;
+  if (LIVE.blocked) liveNote('\u26d4 You have been blocked from posting by the host. You can still read the chat.', 'bad');
+  else if (!LIVE.open) liveNote('Chat is paused by the hosts \u2014 you can still read messages.');
+  else liveNote('');
+}
+function liveAdd(list, bulk){
+  var box = document.getElementById('lvList'); if (!box) return;
+  var stick = bulk || liveAtBottom();
+  (list || []).forEach(function(m){
+    if (LIVE.seen[m.id]) return;
+    var el = document.createElement('div');
+    el.className = 'lv-m' + (m.src === 'host' ? ' host' : '') + (m.src === 'room' && m.name === LIVE.me ? ' mine' : '');
+    var h = '<div class="lv-h">' + (m.rank ? '<span class="lv-rk">'+esc(m.rank)+'</span>' : '') + '<b>'+esc(m.name)+'</b>' +
+      (m.src === 'host' ? '<span class="lv-tag">HOST</span>' : '') +
+      '<span>'+new Date(m.t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})+'</span></div>';
+    el.innerHTML = h + '<div class="lv-t"></div>';
+    el.querySelector('.lv-t').textContent = m.text;
+    LIVE.seen[m.id] = el; LIVE.count++;
+    box.appendChild(el);
+  });
+  var keys = Object.keys(LIVE.seen);
+  while (keys.length > 300) { var k = keys.shift(); LIVE.seen[k].remove(); delete LIVE.seen[k]; }
+  var e = document.getElementById('lvEmpty'); if (e) e.style.display = Object.keys(LIVE.seen).length ? 'none' : '';
+  if (stick) requestAnimationFrame(liveToBottom);
+}
+function liveConnect(gen){
+  if (gen !== LIVE.gen || !LIVE.pass) return;
+  var ws = new WebSocket(LIVE_CHAT_WS + encodeURIComponent(LIVE.pass));
+  LIVE.ws = ws;
+  var st = document.getElementById('lvStat'); if (st) st.textContent = 'Connecting\u2026';
+  ws.onopen = function(){ LIVE.retry = 0; clearInterval(LIVE.ping); LIVE.ping = setInterval(function(){ try { ws.send('ping'); } catch(e) {} }, 25000); };
+  ws.onmessage = function(ev){
+    if (ev.data === 'pong' || gen !== LIVE.gen) return;
+    var m; try { m = JSON.parse(ev.data); } catch(e) { return; }
+    var st = document.getElementById('lvStat');
+    if (m.type === 'room') { LIVE.me = m.you || ''; LIVE.open = !!m.open; if (st) st.textContent = ''; liveLock(); }
+    else if (m.type === 'chatAll') { Object.keys(LIVE.seen).forEach(function(k){ LIVE.seen[k].remove(); }); LIVE.seen = {}; liveAdd(m.msgs, true); }
+    else if (m.type === 'chatAdd') liveAdd(m.msgs);
+    else if (m.type === 'chatDel') { var el = LIVE.seen[m.id]; if (el) { el.remove(); delete LIVE.seen[m.id]; } }
+    else if (m.type === 'blocked') { LIVE.blocked = true; liveLock(); }
+    else if (m.type === 'unblocked') { LIVE.blocked = false; liveLock(); }
+    else if (m.type === 'denied') { LIVE.pass = ''; liveNote((m.error || 'Could not join') + ' \u2014 leave this tab and open it again.', 'bad'); }
+    else if (m.type === 'error') { liveNote(m.error); setTimeout(liveLock, 2500); }
+  };
+  ws.onclose = function(){
+    clearInterval(LIVE.ping);
+    if (LIVE.ws !== ws || gen !== LIVE.gen) return;
+    var st = document.getElementById('lvStat'); if (st) st.textContent = 'Reconnecting\u2026';
+    LIVE.timer = setTimeout(function(){ liveConnect(gen); }, Math.min(8000, 500 * Math.pow(2, LIVE.retry++)));
+  };
+  ws.onerror = function(){ try { ws.close(); } catch(e) {} };
+}
+function liveSend(){
+  var t = document.getElementById('lvTxt'); if (!t) return;
+  var v = t.value.trim();
+  if (!v || !LIVE.ws || LIVE.ws.readyState !== 1 || !LIVE.open || LIVE.blocked) return;
+  LIVE.ws.send(JSON.stringify({ type: 'say', text: v }));
+  t.value = ''; t.style.height = '';
+  requestAnimationFrame(liveToBottom);
+}
+function liveFullscreen(){
+  var el = document.getElementById('lvVid'); if (!el) return;
+  if (document.fullscreenElement || el.classList.contains('fs')) {
+    if (document.fullscreenElement) document.exitFullscreen();
+    el.classList.remove('fs');
+    try { screen.orientation.unlock(); } catch(e) {}
+    return;
+  }
+  var req = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (req) {
+    Promise.resolve(req.call(el)).then(function(){ try { return screen.orientation.lock('landscape'); } catch(e) {} }).catch(function(){ el.classList.add('fs'); });
+  } else el.classList.add('fs');   // iPhone: fill the screen; rotating the phone sideways fills it edge to edge
+}
+function liveStart(){
+  liveStop();
+  var gen = LIVE.gen;
+  document.getElementById('lvFs').onclick = liveFullscreen;
+  document.getElementById('lvSend').onclick = liveSend;
+  var t = document.getElementById('lvTxt');
+  t.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); liveSend(); } });
+  t.addEventListener('input', function(){ t.style.height = 'auto'; t.style.height = Math.min(110, t.scrollHeight) + 'px'; });
+  apiCall('chatPass', { token: state.token }).then(function(r){
+    if (gen !== LIVE.gen) return;
+    var box = document.getElementById('lvBox');
+    var vid = liveYtId((r && r.videoUrl !== undefined) ? r.videoUrl : state._liveVideo);
+    if (box) box.innerHTML = vid
+      ? '<iframe src="https://www.youtube-nocookie.com/embed/'+vid+'?autoplay=1&playsinline=1&rel=0&modestbranding=1" title="Live meeting video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>'
+      : '<div class="lv-wait">Video will appear here when the stream starts</div>';
+    if (!r || !r.ok || !r.pass) {
+      var e = document.getElementById('lvEmpty'); if (e) e.textContent = (r && r.error) || 'Live chat is not available right now';
+      var st = document.getElementById('lvStat'); if (st) st.textContent = '';
+      LIVE.open = false; liveLock(); liveNote('');
+      return;
+    }
+    LIVE.pass = r.pass;
+    liveConnect(gen);
+  });
+}
+document.addEventListener('fullscreenchange', function(){ if (!document.fullscreenElement) { try { screen.orientation.unlock(); } catch(e) {} } });
 
 function initPusher(){
   if(pusherInstance)return;
@@ -750,6 +904,7 @@ window.addEventListener('message',function(e){
 });
   function render() {
   const app = document.getElementById('app');
+  if (state.tab !== 'live' || state.view !== 'info') { liveStop(); document.body.classList.remove('live-on'); }
 
       function tabBar(active) {
     var bbLabel = 'Mem<span style="font-weight:700;color:var(--red)">BB</span>ers <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;opacity:.6;margin-left:4px"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
@@ -1560,30 +1715,32 @@ window.addEventListener('message',function(e){
     return;
   }
 
-  // Live meeting tab: video (with pop-out) + member chat, hosted at chat.laapoa.org
+  // Live meeting tab: video parks at the top while the chat scrolls under it
   if (state.tab === 'live') {
     if (!state._meetingChat) { state.tab = 'announce'; render(); return; }
+    document.body.classList.add('live-on');
     app.innerHTML =
-      '<div class="card" style="padding-bottom:8px">' +
+      '<div class="card lv-card">' +
         '<div class="member-header">' +
           '<div class="avatar">'+initials+'</div>' +
           '<div><div class="member-name">'+esc(m.name)+'</div>' +
           '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' \u00b7 '+esc(m.mou):'')+'</div></div>' +
         '</div>' +
         tabBar('live') +
-        '<div id="liveBox" style="border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:#081426">' +
-          '<div style="text-align:center;padding:30px;color:var(--text-muted)">Joining the meeting...</div>' +
+        '<div class="lv-vid" id="lvVid">' +
+          '<div class="lv-box" id="lvBox"><div class="lv-wait">Loading video\u2026</div></div>' +
+          '<div class="lv-bar"><span class="lv-badge">LIVE</span><span class="lv-stat" id="lvStat">Connecting\u2026</span>' +
+          '<button type="button" class="lv-fs" id="lvFs">\u26f6 Full screen</button></div>' +
         '</div>' +
+        '<div class="lv-list" id="lvList"><div class="lv-empty" id="lvEmpty">Joining the meeting chat\u2026</div></div>' +
+      '</div>' +
+      '<div class="lv-input" id="lvInput">' +
+        '<div class="lv-note" id="lvNote"></div>' +
+        '<div class="lv-row"><textarea id="lvTxt" rows="1" maxlength="300" placeholder="Write a message\u2026" enterkeyhint="send"></textarea>' +
+        '<button type="button" id="lvSend">SEND</button></div>' +
       '</div>';
     wireTabEvents();
-    apiCall('chatPass',{token:state.token}).then(function(r){
-      var box=document.getElementById('liveBox');
-      if(!box||state.tab!=='live')return;
-      if(!r||!r.ok||!r.pass){box.innerHTML='<div class="err" style="margin:14px">'+esc((r&&r.error)||'Live chat is not available right now')+'</div>';return;}
-      var v=r.videoUrl!==undefined?r.videoUrl:(state._liveVideo||'');
-      box.innerHTML='<iframe id="liveFrame" title="Live meeting" src="'+LIVE_CHAT_URL+'#embed=1&v='+encodeURIComponent(v)+'&pass='+encodeURIComponent(r.pass)+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-write" allowfullscreen style="display:block;width:100%;border:0;background:#081426"></iframe>';
-      fitLive();
-    });
+    liveStart();
     return;
   }
 
