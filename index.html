@@ -201,20 +201,42 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);m
 .td-panel .tab.off{opacity:.35;cursor:not-allowed;font-style:italic}
 /* tab navigator stays pinned at the top while scrolling (except on the Live tab, where the video parks there) */
 body:not(.live-on) .tabdock{position:sticky;top:env(safe-area-inset-top);z-index:50;box-shadow:0 6px 16px rgba(0,0,0,.35)}
-/* ---------- Live tab ---------- */
+/* ---------- Live: one video player that never reloads ---------- */
 .lv-card{padding-bottom:110px!important}
-.lv-vid{position:sticky;top:0;z-index:30;margin:0 -24px 12px;background:#000;box-shadow:0 6px 18px rgba(0,0,0,.45)}
-.lv-box{position:relative;width:100%;aspect-ratio:16/9;max-height:42vh;max-height:42dvh;margin:0 auto;background:#000}
-.lv-box iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.lv-wait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;text-align:center;padding:10px}
-.lv-bar{display:flex;align-items:center;gap:8px;padding:6px 12px;background:#050d1a;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-dim)}
-.lv-badge{font-weight:700;font-size:10px;letter-spacing:2px;color:#fff;background:var(--red);padding:3px 7px;border-radius:4px}
-.lv-stat{flex:1}
-.lv-fs{background:var(--surface-raised);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:5px 10px;font:600 12px 'DM Sans',sans-serif;cursor:pointer}
-.lv-vid:fullscreen,.lv-vid.fs{position:fixed;inset:0;z-index:10000;margin:0;display:flex;flex-direction:column;justify-content:center;background:#000}
-.lv-vid:fullscreen .lv-box,.lv-vid.fs .lv-box{flex:1;max-height:none;aspect-ratio:auto}
-.lv-vid.fs .lv-bar{position:absolute;top:0;right:0;background:transparent;border:0}
-.lv-vid.fs .lv-badge,.lv-vid.fs .lv-stat{display:none}
+.lv-slot{margin:0 -24px 12px;background:#000}
+#lvDock{position:fixed;z-index:60;background:#000;display:none;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+#lvDock.on{display:block}
+#lvDock .lvd-box{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}
+#lvDock .lvd-box iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.lvd-wait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;text-align:center;padding:10px}
+.lvd-bar{display:flex;align-items:center;gap:8px;padding:6px 12px;background:#050d1a;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-dim)}
+.lvd-badge{font-weight:700;font-size:10px;letter-spacing:2px;color:#fff;background:var(--red);padding:3px 7px;border-radius:4px}
+.lvd-stat{flex:1}
+.lvd-btn{background:var(--surface-raised);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:5px 10px;font:600 12px 'DM Sans',sans-serif;cursor:pointer}
+.lvd-mini{display:none}
+/* mini player on every other tab */
+#lvDock.mini{left:50%!important;transform:translateX(-50%);top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom));width:calc(100% - 20px)!important;max-width:500px;display:flex;align-items:center;gap:10px;padding:8px;border-radius:14px;border:1px solid rgba(198,151,63,.45);background:#050d1a;box-shadow:0 12px 30px rgba(0,0,0,.6);box-sizing:border-box}
+#lvDock.mini .lvd-box{flex:none;width:128px;border-radius:8px}
+#lvDock.mini .lvd-bar{display:none}
+#lvDock.mini .lvd-mini{display:flex;flex:1;min-width:0;align-items:center;gap:8px}
+.lvd-mtxt{flex:1;min-width:0}
+.lvd-mtxt b{display:block;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lvd-mtxt span{font-size:11px;color:var(--text-dim)}
+.lvd-go{flex:none;height:44px;padding:0 12px;border:0;border-radius:10px;background:var(--gold);color:var(--navy);font:700 13px 'DM Sans',sans-serif;cursor:pointer}
+.lvd-x{flex:none;width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:18px;cursor:pointer}
+body.lv-mini .container{padding-bottom:104px}
+/* large player on other tabs: parked at the top, page scrolls under it, tab navigator pins just below it */
+#lvDock.mini.big{top:0!important;bottom:auto;width:100%!important;flex-wrap:wrap;padding:env(safe-area-inset-top) 0 8px;gap:0;overflow:hidden;border-radius:0 0 14px 14px;border-top:0}
+#lvDock.mini.big .lvd-box{width:100%;border-radius:0}
+#lvDock.mini.big .lvd-mini{padding:8px 8px 0}
+body.lv-big .container{padding-top:var(--lv-big-h,340px);padding-bottom:24px}
+body.lv-big:not(.live-on) .tabdock{top:var(--lv-big-h,340px)}
+@media (max-width:420px){#lvDock.mini:not(.big) .lvd-box{width:100px}#lvDock.mini .lvd-x{width:40px;height:40px}#lvDock.mini .lvd-go{height:40px;padding:0 10px}}
+#lvDock:fullscreen,#lvDock.fs{position:fixed!important;inset:0!important;width:auto!important;transform:none!important;z-index:10000;display:flex!important;flex-direction:column;justify-content:center;border-radius:0;padding:0}
+#lvDock:fullscreen .lvd-box,#lvDock.fs .lvd-box{flex:1;width:100%;aspect-ratio:auto;border-radius:0}
+#lvDock:fullscreen .lvd-mini,#lvDock.fs .lvd-mini{display:none}
+#lvDock.fs .lvd-bar{position:absolute;top:0;right:0;background:transparent;border:0}
+#lvDock.fs .lvd-badge,#lvDock.fs .lvd-stat{display:none}
 .lv-list{display:flex;flex-direction:column;gap:10px;min-height:40vh}
 .lv-empty{color:var(--text-muted);text-align:center;font-size:13px;padding:30px 10px}
 .lv-m{max-width:86%;align-self:flex-start}
@@ -230,18 +252,19 @@ body:not(.live-on) .tabdock{position:sticky;top:env(safe-area-inset-top);z-index
 .lv-m.host .lv-t{background:rgba(198,151,63,.15);border-color:var(--border-bright)}
 .lv-input{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:520px;z-index:40;background:rgba(11,26,51,.97);border-top:1px solid var(--border);padding:8px 12px calc(8px + env(safe-area-inset-bottom));box-sizing:border-box}
 .lv-row{display:flex;gap:8px}
+.lv-menu{flex:none;width:44px;height:44px;border-radius:12px;border:1px solid var(--border-bright);background:var(--surface);color:var(--gold);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .lv-row textarea{flex:1;min-width:0;resize:none;height:44px;max-height:110px;background:var(--navy);border:1px solid var(--border);border-radius:12px;color:var(--text);font:16px/1.35 'DM Sans',sans-serif;padding:11px 12px;box-sizing:border-box}
 .lv-row textarea:focus{outline:2px solid var(--gold);border-color:transparent}
-.lv-row button{flex:none;width:74px;border:0;border-radius:12px;background:var(--gold);color:var(--navy);font:700 14px 'DM Sans',sans-serif;letter-spacing:1.5px;cursor:pointer}
-.lv-row button:disabled,.lv-row textarea:disabled{opacity:.5}
+.lv-row .lv-send{flex:none;width:70px;border:0;border-radius:12px;background:var(--gold);color:var(--navy);font:700 14px 'DM Sans',sans-serif;letter-spacing:1.5px;cursor:pointer}
+.lv-row .lv-send:disabled,.lv-row textarea:disabled{opacity:.5}
 .lv-note{display:none;font-size:12px;color:var(--gold-light);text-align:center;margin-bottom:6px}
 .lv-note.on{display:block}
 .lv-note.bad{color:#fff;background:rgba(192,57,43,.35);border:1px solid var(--red);border-radius:8px;padding:8px 10px;font-weight:600}
-/* phone turned sideways: video fills the screen */
+/* phone turned sideways on the Live tab: video fills the screen */
 @media (orientation:landscape) and (max-height:520px){
-  body.live-on .lv-vid{position:fixed;inset:0;z-index:10000;margin:0;display:flex;flex-direction:column;justify-content:center}
-  body.live-on .lv-box{flex:1;max-height:none;aspect-ratio:auto}
-  body.live-on .lv-bar,body.live-on .lv-input{display:none}
+  body.live-on #lvDock{position:fixed!important;inset:0!important;width:auto!important;z-index:10000;display:flex;flex-direction:column;justify-content:center}
+  body.live-on #lvDock .lvd-box{flex:1;aspect-ratio:auto}
+  body.live-on #lvDock .lvd-bar,body.live-on .lv-input{display:none}
 }
 </style>
 <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
@@ -522,14 +545,36 @@ let annLastSeen=parseInt(localStorage.getItem('laapoa_ann_seen')||'0');
 // Pusher live wheel
 var pusherInstance=null;
 var pusherChannel=null;
-// ================= LIVE TAB: video + member chat =================
-var LIVE = { ws:null, ping:null, retry:0, timer:null, me:'', open:true, blocked:false, seen:{}, count:0, pass:'', gen:0, err:'' };
+// ================= LIVE: video + member chat (keeps running while members use other tabs) =================
+var LIVE = { on:false, ws:null, ping:null, retry:0, timer:null, me:'', open:true, blocked:false, err:'', list:[], ids:{}, unread:0, pass:'', gen:0, vid:'' };
+function liveDock(){
+  var d = document.getElementById('lvDock');
+  if (d) return d;
+  d = document.createElement('div'); d.id = 'lvDock';
+  d.innerHTML = '<div class="lvd-box" id="lvBox"><div class="lvd-wait">Loading video…</div></div>' +
+    '<div class="lvd-bar"><span class="lvd-badge">LIVE</span><span class="lvd-stat" id="lvStat"></span><button type="button" class="lvd-btn" id="lvFs">⛶ Full screen</button></div>' +
+    '<div class="lvd-mini"><div class="lvd-mtxt"><b>Live meeting</b><span id="lvMini">Still playing</span></div>' +
+    '<button type="button" class="lvd-x" id="lvSize" aria-label="Bigger or smaller video" title="Bigger / smaller"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>' +
+    '<button type="button" class="lvd-go" id="lvGo">Live</button><button type="button" class="lvd-x" id="lvX" aria-label="Stop video">✕</button></div>';
+  document.body.appendChild(d);
+  document.getElementById('lvFs').onclick = liveFullscreen;
+  document.getElementById('lvGo').onclick = function(){ setState({tab:'live'}); };
+  document.getElementById('lvX').onclick = function(){ liveStop(); render(); };
+  document.getElementById('lvSize').onclick = function(){
+    var big = !document.getElementById('lvDock').classList.contains('big');
+    try { big ? localStorage.setItem('laapoa_live_big', '1') : localStorage.removeItem('laapoa_live_big'); } catch(e) {}
+    livePlace();
+  };
+  return d;
+}
 function liveStop(){
-  LIVE.gen++;
+  LIVE.gen++; LIVE.on = false;
   clearInterval(LIVE.ping); clearTimeout(LIVE.timer);
   if (LIVE.ws) { var w = LIVE.ws; LIVE.ws = null; try { w.close(); } catch(e) {} }
-  LIVE.seen = {}; LIVE.count = 0; LIVE.err = ''; LIVE.open = true; LIVE.blocked = false;
+  LIVE.list = []; LIVE.ids = {}; LIVE.unread = 0; LIVE.err = ''; LIVE.open = true; LIVE.blocked = false; LIVE.pass = ''; LIVE.vid = '';
   if (document.fullscreenElement) { try { document.exitFullscreen(); } catch(e) {} }
+  var d = document.getElementById('lvDock'); if (d) d.remove();
+  document.body.classList.remove('lv-mini', 'lv-big');
 }
 function liveYtId(v){
   v = String(v||'').trim();
@@ -539,59 +584,90 @@ function liveYtId(v){
 }
 function liveAtBottom(){ return (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 140); }
 function liveToBottom(){ window.scrollTo(0, document.documentElement.scrollHeight); }
+// place the one video player: parked over the Live tab's slot, or as the mini player
+function livePlace(){
+  var d = document.getElementById('lvDock'); if (!d || !LIVE.on) return;
+  d.classList.add('on');
+  var slot = document.getElementById('lvSlot');
+  if (state.tab === 'live' && slot) {
+    d.classList.remove('mini', 'big'); document.body.classList.remove('lv-mini', 'lv-big');
+    var r = slot.getBoundingClientRect();
+    d.style.left = r.left + 'px'; d.style.width = r.width + 'px';
+    d.style.top = Math.max(0, r.top) + 'px';
+    slot.style.height = d.offsetHeight + 'px';
+  } else {
+    var big = false; try { big = localStorage.getItem('laapoa_live_big') === '1'; } catch(e) {}
+    d.classList.add('mini'); d.classList.toggle('big', big);
+    document.body.classList.add('lv-mini'); document.body.classList.toggle('lv-big', big);
+    d.style.left = ''; d.style.width = ''; d.style.top = '';
+    if (big) { var setH = function(){ document.documentElement.style.setProperty('--lv-big-h', (d.getBoundingClientRect().height + 8) + 'px'); }; setH(); requestAnimationFrame(setH); setTimeout(setH, 300); }
+    var mt = document.getElementById('lvMini');
+    if (mt) mt.textContent = LIVE.unread ? (LIVE.unread + ' new message' + (LIVE.unread > 1 ? 's' : '')) : 'Still playing';
+  }
+}
+window.addEventListener('scroll', function(){ if (LIVE.on && state.tab === 'live') livePlace(); }, { passive: true });
+window.addEventListener('resize', function(){ if (LIVE.on) livePlace(); });
 function liveNote(t, kind){ var n = document.getElementById('lvNote'); if (!n) return; n.textContent = t || ''; n.className = 'lv-note' + (t ? ' on' : '') + (kind ? ' ' + kind : ''); }
 function liveLock(){
   var off = !LIVE.open || LIVE.blocked || !!LIVE.err, t = document.getElementById('lvTxt'), b = document.getElementById('lvSend');
-  if (t) { t.disabled = off; t.placeholder = LIVE.err ? 'Chat unavailable' : LIVE.blocked ? 'Blocked by the host' : (!LIVE.open ? 'Chat is paused' : 'Write a message\u2026'); }
+  if (t) { t.disabled = off; t.placeholder = LIVE.err ? 'Chat unavailable' : LIVE.blocked ? 'Blocked by the host' : (!LIVE.open ? 'Chat is paused' : 'Write a message…'); }
   if (b) b.disabled = off;
   if (LIVE.err) liveNote(LIVE.err, 'bad');
-  else if (LIVE.blocked) liveNote('\u26d4 You have been blocked from posting by the host. You can still read the chat.', 'bad');
-  else if (!LIVE.open) liveNote('Chat is paused by the hosts \u2014 you can still read messages.');
+  else if (LIVE.blocked) liveNote('⛔ You have been blocked from posting by the host. You can still read the chat.', 'bad');
+  else if (!LIVE.open) liveNote('Chat is paused by the hosts — you can still read messages.');
   else liveNote('');
 }
-function liveAdd(list, bulk){
+function liveMsgEl(m){
+  var el = document.createElement('div');
+  el.className = 'lv-m' + (m.src === 'host' ? ' host' : '') + (m.src === 'room' && m.name === LIVE.me ? ' mine' : '');
+  el.setAttribute('data-id', m.id);
+  el.innerHTML = '<div class="lv-h">' + (m.rank ? '<span class="lv-rk">'+esc(m.rank)+'</span>' : '') + '<b>'+esc(m.name)+'</b>' +
+    (m.src === 'host' ? '<span class="lv-tag">HOST</span>' : '') +
+    '<span>'+new Date(m.t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})+'</span></div><div class="lv-t"></div>';
+  el.querySelector('.lv-t').textContent = m.text;
+  return el;
+}
+function liveDraw(){   // (re)build the message list from memory when the Live tab opens
   var box = document.getElementById('lvList'); if (!box) return;
-  var stick = bulk || liveAtBottom();
+  box.querySelectorAll('.lv-m').forEach(function(x){ x.remove(); });
+  LIVE.list.forEach(function(m){ box.appendChild(liveMsgEl(m)); });
+  var e = document.getElementById('lvEmpty'); if (e) { e.style.display = LIVE.list.length ? 'none' : ''; if (!LIVE.list.length && LIVE.err) e.textContent = LIVE.err; }
+}
+function liveAdd(list, bulk){
+  var box = document.getElementById('lvList'), stick = bulk || liveAtBottom(), added = 0;
   (list || []).forEach(function(m){
-    if (LIVE.seen[m.id]) return;
-    var el = document.createElement('div');
-    el.className = 'lv-m' + (m.src === 'host' ? ' host' : '') + (m.src === 'room' && m.name === LIVE.me ? ' mine' : '');
-    var h = '<div class="lv-h">' + (m.rank ? '<span class="lv-rk">'+esc(m.rank)+'</span>' : '') + '<b>'+esc(m.name)+'</b>' +
-      (m.src === 'host' ? '<span class="lv-tag">HOST</span>' : '') +
-      '<span>'+new Date(m.t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})+'</span></div>';
-    el.innerHTML = h + '<div class="lv-t"></div>';
-    el.querySelector('.lv-t').textContent = m.text;
-    LIVE.seen[m.id] = el; LIVE.count++;
-    box.appendChild(el);
+    if (LIVE.ids[m.id]) return;
+    LIVE.ids[m.id] = 1; LIVE.list.push(m); added++;
+    if (box) box.appendChild(liveMsgEl(m));
   });
-  var keys = Object.keys(LIVE.seen);
-  while (keys.length > 300) { var k = keys.shift(); LIVE.seen[k].remove(); delete LIVE.seen[k]; }
-  var e = document.getElementById('lvEmpty'); if (e) e.style.display = Object.keys(LIVE.seen).length ? 'none' : '';
-  if (stick) requestAnimationFrame(liveToBottom);
+  while (LIVE.list.length > 300) { var old = LIVE.list.shift(); delete LIVE.ids[old.id]; if (box) { var o = box.querySelector('[data-id="'+old.id+'"]'); if (o) o.remove(); } }
+  if (state.tab !== 'live' && !bulk) { LIVE.unread += added; livePlace(); }
+  var e = document.getElementById('lvEmpty'); if (e) e.style.display = LIVE.list.length ? 'none' : '';
+  if (box && stick) requestAnimationFrame(liveToBottom);
 }
 function liveConnect(gen){
   if (gen !== LIVE.gen || !LIVE.pass) return;
   var ws = new WebSocket(LIVE_CHAT_WS + encodeURIComponent(LIVE.pass));
   LIVE.ws = ws;
-  var st = document.getElementById('lvStat'); if (st) st.textContent = 'Connecting\u2026';
+  var st = document.getElementById('lvStat'); if (st) st.textContent = 'Connecting…';
   ws.onopen = function(){ LIVE.retry = 0; clearInterval(LIVE.ping); LIVE.ping = setInterval(function(){ try { ws.send('ping'); } catch(e) {} }, 25000); };
   ws.onmessage = function(ev){
     if (ev.data === 'pong' || gen !== LIVE.gen) return;
     var m; try { m = JSON.parse(ev.data); } catch(e) { return; }
     var st = document.getElementById('lvStat');
     if (m.type === 'room') { LIVE.me = m.you || ''; LIVE.open = !!m.open; if (st) st.textContent = ''; liveLock(); }
-    else if (m.type === 'chatAll') { Object.keys(LIVE.seen).forEach(function(k){ LIVE.seen[k].remove(); }); LIVE.seen = {}; liveAdd(m.msgs, true); }
+    else if (m.type === 'chatAll') { LIVE.list = []; LIVE.ids = {}; liveDraw(); liveAdd(m.msgs, true); }
     else if (m.type === 'chatAdd') liveAdd(m.msgs);
-    else if (m.type === 'chatDel') { var el = LIVE.seen[m.id]; if (el) { el.remove(); delete LIVE.seen[m.id]; } }
+    else if (m.type === 'chatDel') { LIVE.list = LIVE.list.filter(function(x){ return x.id !== m.id; }); delete LIVE.ids[m.id]; var b = document.getElementById('lvList'); var el = b && b.querySelector('[data-id="'+m.id+'"]'); if (el) el.remove(); }
     else if (m.type === 'blocked') { LIVE.blocked = true; liveLock(); }
     else if (m.type === 'unblocked') { LIVE.blocked = false; liveLock(); }
-    else if (m.type === 'denied') { LIVE.pass = ''; LIVE.err = (m.error || 'Could not join') + ' \u2014 leave this tab and open it again.'; liveLock(); }
+    else if (m.type === 'denied') { LIVE.pass = ''; LIVE.err = (m.error || 'Could not join') + ' — leave this tab and open it again.'; liveLock(); }
     else if (m.type === 'error') { liveNote(m.error); setTimeout(liveLock, 2500); }
   };
   ws.onclose = function(){
     clearInterval(LIVE.ping);
     if (LIVE.ws !== ws || gen !== LIVE.gen) return;
-    var st = document.getElementById('lvStat'); if (st) st.textContent = 'Reconnecting\u2026';
+    var st = document.getElementById('lvStat'); if (st) st.textContent = 'Reconnecting…';
     LIVE.timer = setTimeout(function(){ liveConnect(gen); }, Math.min(8000, 500 * Math.pow(2, LIVE.retry++)));
   };
   ws.onerror = function(){ try { ws.close(); } catch(e) {} };
@@ -605,7 +681,7 @@ function liveSend(){
   requestAnimationFrame(liveToBottom);
 }
 function liveFullscreen(){
-  var el = document.getElementById('lvVid'); if (!el) return;
+  var el = document.getElementById('lvDock'); if (!el) return;
   if (document.fullscreenElement || el.classList.contains('fs')) {
     if (document.fullscreenElement) document.exitFullscreen();
     el.classList.remove('fs');
@@ -615,34 +691,39 @@ function liveFullscreen(){
   var req = el.requestFullscreen || el.webkitRequestFullscreen;
   if (req) {
     Promise.resolve(req.call(el)).then(function(){ try { return screen.orientation.lock('landscape'); } catch(e) {} }).catch(function(){ el.classList.add('fs'); });
-  } else el.classList.add('fs');   // iPhone: fill the screen; rotating the phone sideways fills it edge to edge
+  } else el.classList.add('fs');   // iPhone: fill the screen; turning the phone sideways fills it edge to edge
 }
-function liveStart(){
-  liveStop();
+document.addEventListener('fullscreenchange', function(){ if (!document.fullscreenElement) { try { screen.orientation.unlock(); } catch(e) {} } });
+// start once; afterwards the same video + chat connection survive tab changes
+function liveEnsure(){
+  if (LIVE.on) return;
+  LIVE.on = true;
   var gen = LIVE.gen;
-  document.getElementById('lvFs').onclick = liveFullscreen;
-  document.getElementById('lvSend').onclick = liveSend;
-  var t = document.getElementById('lvTxt');
-  t.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); liveSend(); } });
-  t.addEventListener('input', function(){ t.style.height = 'auto'; t.style.height = Math.min(110, t.scrollHeight) + 'px'; });
+  liveDock();
   apiCall('chatPass', { token: state.token }).then(function(r){
     if (gen !== LIVE.gen) return;
     var box = document.getElementById('lvBox');
     var vid = liveYtId((r && r.videoUrl !== undefined) ? r.videoUrl : state._liveVideo);
+    LIVE.vid = vid;
     if (box) box.innerHTML = vid
       ? '<iframe src="https://www.youtube-nocookie.com/embed/'+vid+'?autoplay=1&playsinline=1&rel=0&modestbranding=1" title="Live meeting video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>'
-      : '<div class="lv-wait">Video will appear here when the stream starts</div>';
-    if (!r || !r.ok || !r.pass) {
-      var e = document.getElementById('lvEmpty'); if (e) e.textContent = (r && r.error) || 'Live chat is not available right now';
-      var st = document.getElementById('lvStat'); if (st) st.textContent = '';
-      LIVE.err = (r && r.error) || 'Live chat is not available right now'; liveLock();
-      return;
-    }
+      : '<div class="lvd-wait">Video will appear here when the stream starts</div>';
+    livePlace();
+    if (!r || !r.ok || !r.pass) { LIVE.err = (r && r.error) || 'Live chat is not available right now'; liveDraw(); liveLock(); return; }
     LIVE.pass = r.pass;
     liveConnect(gen);
   });
 }
-document.addEventListener('fullscreenchange', function(){ if (!document.fullscreenElement) { try { screen.orientation.unlock(); } catch(e) {} } });
+function liveMount(){   // called each time the Live tab is drawn
+  liveEnsure(); LIVE.unread = 0;
+  liveDraw(); liveLock();
+  document.getElementById('lvSend').onclick = liveSend;
+  document.getElementById('lvMenu').onclick = function(){ window.scrollTo(0, 0); window._tabDockOpen = true; var d = document.getElementById('tabDock'); if (d) d.classList.add('open'); };
+  var t = document.getElementById('lvTxt');
+  t.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); liveSend(); } });
+  t.addEventListener('input', function(){ t.style.height = 'auto'; t.style.height = Math.min(110, t.scrollHeight) + 'px'; });
+  requestAnimationFrame(function(){ livePlace(); liveToBottom(); requestAnimationFrame(livePlace); });
+}
 
 function initPusher(){
   if(pusherInstance)return;
@@ -654,6 +735,7 @@ function initPusher(){
       if(data&&data.videoUrl!==undefined)state._liveVideo=data.videoUrl||'';
       if(on===!!state._meetingChat)return;
       state._meetingChat=on;
+      if(!on&&LIVE.on)liveStop();
       if(!on&&state.tab==='live'){setState({tab:'announce'});return;}
       if(state.tab!=='live')render();
     });
@@ -907,7 +989,9 @@ window.addEventListener('message',function(e){
 });
   function render() {
   const app = document.getElementById('app');
-  if (state.tab !== 'live' || state.view !== 'info') { liveStop(); document.body.classList.remove('live-on'); }
+  if (state.view !== 'info' || !state._meetingChat) { if (LIVE.on) liveStop(); }
+  if (state.tab !== 'live') document.body.classList.remove('live-on');
+  setTimeout(livePlace, 0);   // video keeps playing: parked on Live, mini player on other tabs
 
       function tabBar(active) {
     var bbLabel = 'Mem<span style="font-weight:700;color:var(--red)">BB</span>ers <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;opacity:.6;margin-left:4px"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
@@ -1008,7 +1092,7 @@ window.addEventListener('message',function(e){
         '<button class="btn btn-gold" id="loginBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Verifying...':'Sign In')+'</button>' +
       '<div style="text-align:center;margin-top:18px;font-size:13px;color:var(--text-dim);line-height:1.5">Not a member yet? Submit your enrollment <a href="https://laapoa.github.io/Join_membership/" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline">here</a> to have your eligibility evaluated.</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.1.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     document.getElementById('loginBtn').addEventListener('click', handleLogin);
         var dobEl=document.getElementById('dob');
     if(dobEl){dobEl.addEventListener('click',function(){try{dobEl.showPicker();}catch(e){}});}
@@ -1052,7 +1136,7 @@ window.addEventListener('message',function(e){
         '<div class="info-row"><span class="info-label">Address</span><span class="info-val" style="white-space:pre-line">'+(fmtAddr?esc(fmtAddr).replace(/\\n/g,'\n'):'—')+'</span></div>' +
         '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.1.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
     document.getElementById('editToggle').addEventListener('click', function(){setState({tab:'edit',error:'',success:''});});
@@ -1077,7 +1161,7 @@ window.addEventListener('message',function(e){
           (ds.countdownMs>0?'<div id="countdown" style="margin-top:20px;font-family:\'JetBrains Mono\',monospace;font-size:36px;color:var(--gold);letter-spacing:2px"></div><div style="font-size:11px;color:var(--text-muted);margin-top:6px">until access is restored</div>':'') +
         '</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.1.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
 
@@ -1160,7 +1244,7 @@ window.addEventListener('message',function(e){
         '<div class="search-input"><input id="searchQ" type="text" placeholder="Search by name or serial #..." value="'+esc(searchQuery)+'" autocomplete="off"></div>' +
         '<div id="searchResults">' + resultsHtml + '</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.1.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
     const sq = document.getElementById('searchQ');
@@ -1218,7 +1302,7 @@ window.addEventListener('message',function(e){
         tabBar('announce') +
         '<div id="annContent">'+annHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.1.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     // Load announcements and birthdays together
@@ -1346,7 +1430,7 @@ window.addEventListener('message',function(e){
         tabBar('events') +
         '<div id="eventsContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading events...</div></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.1.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     function loadEvents(){
@@ -1505,7 +1589,7 @@ window.addEventListener('message',function(e){
         tabBar('decide') +
         '<div id="decideContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading votes...</div></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.1.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     apiCall('getVotes',{token:state.token,mou:m.mou,cid:m.cid}).then(function(res){
@@ -1727,23 +1811,20 @@ window.addEventListener('message',function(e){
         '<div class="member-header">' +
           '<div class="avatar">'+initials+'</div>' +
           '<div><div class="member-name">'+esc(m.name)+'</div>' +
-          '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' \u00b7 '+esc(m.mou):'')+'</div></div>' +
+          '<div class="member-detail">'+esc(m.rank||'')+(m.mou?' · '+esc(m.mou):'')+'</div></div>' +
         '</div>' +
         tabBar('live') +
-        '<div class="lv-vid" id="lvVid">' +
-          '<div class="lv-box" id="lvBox"><div class="lv-wait">Loading video\u2026</div></div>' +
-          '<div class="lv-bar"><span class="lv-badge">LIVE</span><span class="lv-stat" id="lvStat">Connecting\u2026</span>' +
-          '<button type="button" class="lv-fs" id="lvFs">\u26f6 Full screen</button></div>' +
-        '</div>' +
-        '<div class="lv-list" id="lvList"><div class="lv-empty" id="lvEmpty">Joining the meeting chat\u2026</div></div>' +
+        '<div class="lv-slot" id="lvSlot"></div>' +
+        '<div class="lv-list" id="lvList"><div class="lv-empty" id="lvEmpty">Joining the meeting chat…</div></div>' +
       '</div>' +
       '<div class="lv-input" id="lvInput">' +
         '<div class="lv-note" id="lvNote"></div>' +
-        '<div class="lv-row"><textarea id="lvTxt" rows="1" maxlength="300" placeholder="Write a message\u2026" enterkeyhint="send"></textarea>' +
-        '<button type="button" id="lvSend">SEND</button></div>' +
+        '<div class="lv-row"><button type="button" class="lv-menu" id="lvMenu" aria-label="Show tabs"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></button>' +
+        '<textarea id="lvTxt" rows="1" maxlength="300" placeholder="Write a message…" enterkeyhint="send"></textarea>' +
+        '<button type="button" class="lv-send" id="lvSend">SEND</button></div>' +
       '</div>';
     wireTabEvents();
-    liveStart();
+    liveMount();
     return;
   }
 
@@ -1759,7 +1840,7 @@ window.addEventListener('message',function(e){
         tabBar('sum') +
         '<iframe id="sumFrame" title="Compensation calculator" src="sum.html?embed=1&mou='+encodeURIComponent(m.mou||'')+'&rank='+encodeURIComponent(m.rank||'')+'&name='+encodeURIComponent(m.name||'')+'" style="width:100%;min-height:700px;border:0;display:block;background:transparent"></iframe>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.1.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     return;
   }
@@ -1822,7 +1903,7 @@ window.addEventListener('message',function(e){
         '</div>' +
         '<div id="bbContent">'+bbHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.1.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     // Wire three-dot menu
     document.getElementById('bbMenuBtn').addEventListener('click',function(ev){
@@ -2191,7 +2272,7 @@ window.addEventListener('message',function(e){
         '<button class="btn btn-gold" id="saveBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Saving...':'Save Changes')+'</button>' +
       '</div>' +
     '</div>' +
-    '<div class="footer"><span style="opacity:.5">ver 1.1.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+    '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
   document.getElementById('saveBtn').addEventListener('click', handleUpdate);
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
