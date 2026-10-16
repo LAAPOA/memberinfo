@@ -250,6 +250,8 @@ body.lv-big:not(.live-on) .tabdock{top:var(--lv-big-h,340px)}
 .lv-t{background:var(--surface-raised);border:1px solid var(--border);border-radius:4px 14px 14px 14px;padding:8px 12px;font-size:15px;line-height:1.4;color:var(--text);overflow-wrap:anywhere;white-space:pre-wrap}
 .lv-m.mine .lv-t{background:#1c3a66;border-color:#2c5590;border-radius:14px 4px 14px 14px}
 .lv-m.host .lv-t{background:rgba(198,151,63,.15);border-color:var(--border-bright)}
+.lv-m.sys{align-self:center;max-width:90%}.lv-m.sys .lv-h{display:none}
+.lv-m.sys .lv-t{background:rgba(39,174,96,.13);border-color:rgba(39,174,96,.5);color:#c9f2d6;font-weight:700;border-radius:14px;text-align:center}
 .lv-input{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:520px;z-index:40;background:rgba(11,26,51,.97);border-top:1px solid var(--border);padding:8px 12px calc(8px + env(safe-area-inset-bottom));box-sizing:border-box}
 .lv-row{display:flex;gap:8px}
 .lv-menu{flex:none;width:44px;height:44px;border-radius:12px;border:1px solid var(--border-bright);background:var(--surface);color:var(--gold);display:flex;align-items:center;justify-content:center;cursor:pointer}
@@ -258,6 +260,31 @@ body.lv-big:not(.live-on) .tabdock{top:var(--lv-big-h,340px)}
 .lv-row .lv-send{flex:none;width:70px;border:0;border-radius:12px;background:var(--gold);color:var(--navy);font:700 14px 'DM Sans',sans-serif;letter-spacing:1.5px;cursor:pointer}
 .lv-row .lv-send:disabled,.lv-row textarea:disabled{opacity:.5}
 .lv-note{display:none;font-size:12px;color:var(--gold-light);text-align:center;margin-bottom:6px}
+.lv-clip{flex:none;width:44px;height:44px;border-radius:12px;border:1px solid var(--gold);background:var(--surface);color:var(--gold);font-size:20px;display:none;align-items:center;justify-content:center;cursor:pointer}
+.lv-clip.on{display:flex}
+.lv-clip:disabled{opacity:.45}
+.lv-med{display:block;margin-top:2px;border-radius:12px;overflow:hidden;background:#06101f;width:240px;max-width:100%;border:1px solid var(--border)}
+.lv-med img,.lv-med video{display:block;width:100%;max-height:220px;object-fit:cover;background:#06101f}
+.lv-med a.pdf{display:flex;align-items:center;gap:10px;padding:12px;color:var(--text);text-decoration:none;font-size:14px;font-weight:600}
+.lv-med a.pdf span:first-child{font-size:24px}
+.lv-m.mine .lv-med{margin-left:auto}
+.lv-pend{display:inline-block;margin:6px 0 2px;font-size:11px;font-weight:700;color:#ffd98a;background:rgba(0,0,0,.35);padding:3px 8px;border-radius:6px}
+.lv-up{position:fixed;inset:0;z-index:12000;background:rgba(4,10,20,.6);display:flex;align-items:flex-end;justify-content:center}
+.lv-up .sh{width:100%;max-width:520px;background:#0d1a2e;border-top:1px solid var(--border-bright);border-radius:18px 18px 0 0;padding:14px 14px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box}
+.lv-up .gr{width:40px;height:4px;border-radius:2px;background:#3a4560;margin:0 auto 12px}
+.lv-up h3{margin:0 0 10px;font:700 16px 'DM Sans',sans-serif;color:var(--text);display:flex;justify-content:space-between;align-items:center}
+.lv-up h3 button{background:none;border:0;color:var(--text-muted);font-size:22px;cursor:pointer}
+.lv-up .pv{border-radius:12px;overflow:hidden;background:#06101f;max-height:260px;display:flex;align-items:center;justify-content:center}
+.lv-up .pv img,.lv-up .pv video{display:block;width:100%;max-height:260px;object-fit:contain}
+.lv-up .pv .pdf{padding:22px;color:var(--text);font-weight:600;font-size:15px;text-align:center}
+.lv-up input[type=text]{width:100%;box-sizing:border-box;margin-top:10px;height:44px;border-radius:10px;border:1px solid var(--gold);background:var(--navy);color:var(--text);font:16px 'DM Sans',sans-serif;padding:0 12px}
+.lv-up .fine{font-size:11px;color:var(--text-muted);margin:8px 2px}
+.lv-up .go{width:100%;height:48px;border:0;border-radius:10px;background:var(--gold);color:var(--navy);font:700 15px 'DM Sans',sans-serif;letter-spacing:1.5px;cursor:pointer}
+.lv-up .go:disabled{opacity:.6}
+.lv-up .bar{height:6px;border-radius:3px;background:#1d2b44;margin:8px 0;overflow:hidden;display:none}
+.lv-up .bar i{display:block;height:100%;width:0;background:var(--gold);transition:width .2s}
+.lv-up .err{color:#ffb3b3;font-size:13px;margin:6px 2px;min-height:0;background:none;border:0;padding:0;display:block}
+.lv-up .err:empty{display:none}
 .lv-note.on{display:block}
 .lv-note.bad{color:#fff;background:rgba(192,57,43,.35);border:1px solid var(--red);border-radius:8px;padding:8px 10px;font-weight:600}
 /* phone turned sideways on the Live tab: video fills the screen */
@@ -275,6 +302,7 @@ body.lv-big:not(.live-on) .tabdock{top:var(--lv-big-h,340px)}
 <script>
 const API_URL = 'https://laapoa-api.mike-a78.workers.dev/';
 const LIVE_CHAT_WS = 'wss://chat.laapoa.org/chatws?pass=';   // meeting-day Live tab chat
+const LIVE_UPLOAD_URL = 'https://chat.laapoa.org/api/upload';   // member photos / short videos / PDFs (host approves first)
 const BLOCKED = ['@lawa.org','@lacity.org','@lacity.com','@lapd.online'];
 
 const RANK_OPTIONS = [
@@ -546,7 +574,7 @@ let annLastSeen=parseInt(localStorage.getItem('laapoa_ann_seen')||'0');
 var pusherInstance=null;
 var pusherChannel=null;
 // ================= LIVE: video + member chat (keeps running while members use other tabs) =================
-var LIVE = { on:false, ws:null, ping:null, retry:0, timer:null, me:'', open:true, blocked:false, err:'', list:[], ids:{}, unread:0, pass:'', gen:0, vid:'' };
+var LIVE = { on:false, ws:null, ping:null, retry:0, timer:null, me:'', open:true, blocked:false, err:'', list:[], ids:{}, unread:0, pass:'', gen:0, vid:'', uploads:false };
 function liveDock(){
   var d = document.getElementById('lvDock');
   if (d) return d;
@@ -612,6 +640,7 @@ function liveLock(){
   var off = !LIVE.open || LIVE.blocked || !!LIVE.err, t = document.getElementById('lvTxt'), b = document.getElementById('lvSend');
   if (t) { t.disabled = off; t.placeholder = LIVE.err ? 'Chat unavailable' : LIVE.blocked ? 'Blocked by the host' : (!LIVE.open ? 'Chat is paused' : 'Write a message…'); }
   if (b) b.disabled = off;
+  var c = document.getElementById('lvClip'); if (c) { c.classList.toggle('on', !!LIVE.uploads); c.disabled = !!(LIVE.err || LIVE.blocked); }
   if (LIVE.err) liveNote(LIVE.err, 'bad');
   else if (LIVE.blocked) liveNote('⛔ You have been blocked from posting by the host. You can still read the chat.', 'bad');
   else if (!LIVE.open) liveNote('Chat is paused by the hosts — you can still read messages.');
@@ -619,12 +648,22 @@ function liveLock(){
 }
 function liveMsgEl(m){
   var el = document.createElement('div');
-  el.className = 'lv-m' + (m.src === 'host' ? ' host' : '') + (m.src === 'room' && m.name === LIVE.me ? ' mine' : '');
+  el.className = 'lv-m' + (m.sys ? ' sys' : m.src === 'host' ? ' host' : '') + (m.src === 'room' && (m.self || m.name === LIVE.me) ? ' mine' : '');
   el.setAttribute('data-id', m.id);
   el.innerHTML = '<div class="lv-h">' + (m.rank ? '<span class="lv-rk">'+esc(m.rank)+'</span>' : '') + '<b>'+esc(m.name)+'</b>' +
     (m.src === 'host' ? '<span class="lv-tag">HOST</span>' : '') +
     '<span>'+new Date(m.t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})+'</span></div><div class="lv-t"></div>';
-  el.querySelector('.lv-t').textContent = m.text;
+  var tx = el.querySelector('.lv-t');
+  tx.textContent = m.text;
+  if (m.media) {   // shared photo / video / PDF
+    var md = document.createElement('div'); md.className = 'lv-med';
+    if (m.media.kind === 'image') { var im = new Image(); im.loading = 'lazy'; im.src = m.media.url; im.onclick = function(){ window.open(m.media.url, '_blank'); }; md.appendChild(im); }
+    else if (m.media.kind === 'video') { var v = document.createElement('video'); v.src = m.media.url; v.controls = true; v.playsInline = true; v.preload = 'metadata'; md.appendChild(v); }
+    else { var a = document.createElement('a'); a.className = 'pdf'; a.href = m.media.url; a.target = '_blank'; a.rel = 'noopener'; a.innerHTML = '<span>📄</span><span></span>'; a.lastChild.textContent = (m.media.name || 'Document.pdf') + ' · Open'; md.appendChild(a); }
+    tx.parentNode.insertBefore(md, tx);
+    if (!m.text) tx.style.display = 'none';
+    if (m.pending) { var pd = document.createElement('div'); pd.className = 'lv-pend'; pd.textContent = '⏳ Waiting for host approval · only you can see this'; el.appendChild(pd); }
+  }
   return el;
 }
 function liveDraw(){   // (re)build the message list from memory when the Live tab opens
@@ -636,7 +675,12 @@ function liveDraw(){   // (re)build the message list from memory when the Live t
 function liveAdd(list, bulk){
   var box = document.getElementById('lvList'), stick = bulk || liveAtBottom(), added = 0;
   (list || []).forEach(function(m){
-    if (LIVE.ids[m.id]) return;
+    if (LIVE.ids[m.id]) {   // my pending upload was approved: swap it for the shared version
+      for (var i = 0; i < LIVE.list.length; i++) if (LIVE.list[i].id === m.id && LIVE.list[i].pending && !m.pending) {
+        LIVE.list[i] = m; var o = box && box.querySelector('[data-id="'+m.id+'"]'); if (o) o.replaceWith(liveMsgEl(m));
+      }
+      return;
+    }
     LIVE.ids[m.id] = 1; LIVE.list.push(m); added++;
     if (box) box.appendChild(liveMsgEl(m));
   });
@@ -644,6 +688,63 @@ function liveAdd(list, bulk){
   if (state.tab !== 'live' && !bulk) { LIVE.unread += added; livePlace(); }
   var e = document.getElementById('lvEmpty'); if (e) e.style.display = LIVE.list.length ? 'none' : '';
   if (box && stick) requestAnimationFrame(liveToBottom);
+}
+// ---- share a photo / short video / PDF (goes to the host for approval) ----
+function liveShrink(file){   // photos: max 1600px JPEG - also drops hidden location data
+  return new Promise(function(res, rej){
+    var url = URL.createObjectURL(file), im = new Image();
+    im.onload = function(){
+      var k = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas');
+      c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      c.toBlob(function(b){ b ? res(b) : rej(new Error('Could not read that photo')); }, 'image/jpeg', 0.85);
+    };
+    im.onerror = function(){ URL.revokeObjectURL(url); rej(new Error('Could not read that photo')); };
+    im.src = url;
+  });
+}
+function liveVidLen(file){
+  return new Promise(function(res){ var v = document.createElement('video'), u = URL.createObjectURL(file); v.preload = 'metadata';
+    v.onloadedmetadata = function(){ URL.revokeObjectURL(u); res(v.duration || 0); }; v.onerror = function(){ URL.revokeObjectURL(u); res(0); }; v.src = u; });
+}
+function livePick(file){
+  var t = String(file.type || '').toLowerCase(), kind = /^image\//.test(t) ? 'image' : /^video\//.test(t) ? 'video' : (t === 'application/pdf' || /\.pdf$/i.test(file.name)) ? 'pdf' : '';
+  if (!kind) { liveNote('Only photos, short videos and PDFs can be shared.', 'bad'); setTimeout(liveLock, 3000); return; }
+  var wrap = document.createElement('div'); wrap.className = 'lv-up';
+  wrap.innerHTML = '<div class="sh"><div class="gr"></div><h3><span>Share ' + (kind === 'image' ? 'a photo' : kind === 'video' ? 'a video' : 'a PDF') + '</span><button type="button" aria-label="Cancel">✕</button></h3>' +
+    '<div class="pv"></div><input type="text" maxlength="200" placeholder="Add a caption (optional)">' +
+    '<div class="fine">The host reviews every file before anyone else sees it.' + (kind === 'image' ? ' Location data is removed.' : kind === 'video' ? ' Videos: 30 seconds max.' : '') + '</div>' +
+    '<div class="bar"><i></i></div><div class="err"></div><button type="button" class="go">SEND FOR APPROVAL</button></div>';
+  document.body.appendChild(wrap);
+  var pv = wrap.querySelector('.pv'), go = wrap.querySelector('.go'), err = wrap.querySelector('.err'), cap = wrap.querySelector('input'), blobUrl = '';
+  var close = function(){ if (blobUrl) URL.revokeObjectURL(blobUrl); wrap.remove(); };
+  wrap.querySelector('h3 button').onclick = close;
+  wrap.onclick = function(e){ if (e.target === wrap) close(); };
+  if (kind === 'pdf') pv.innerHTML = '<div class="pdf">📄 ' + esc(file.name || 'Document.pdf') + '</div>';
+  else { blobUrl = URL.createObjectURL(file); var el = document.createElement(kind === 'image' ? 'img' : 'video'); el.src = blobUrl; if (kind === 'video') { el.controls = true; el.playsInline = true; el.muted = true; } pv.appendChild(el); }
+  go.onclick = function(){
+    err.textContent = ''; go.disabled = true; go.textContent = 'Preparing…';
+    var ready = kind === 'image' ? liveShrink(file).then(function(b){ return { body: b, type: 'image/jpeg' }; })
+      : kind === 'video' ? liveVidLen(file).then(function(d){ if (d > 31) throw new Error('Videos can be 30 seconds at most (this one is ' + Math.round(d) + 's)'); if (file.size > 60e6) throw new Error('That video is too large (60 MB max)'); return { body: file, type: (file.type || 'video/mp4').toLowerCase() }; })
+      : Promise.resolve(file.size > 20e6 ? Promise.reject(new Error('That PDF is too large (20 MB max)')) : { body: file, type: 'application/pdf' });
+    ready.then(function(r){
+      var x = new XMLHttpRequest(), bar = wrap.querySelector('.bar'), fill = bar.firstChild;
+      x.open('POST', LIVE_UPLOAD_URL);
+      x.setRequestHeader('content-type', r.type);
+      x.setRequestHeader('x-pass', LIVE.pass);
+      x.setRequestHeader('x-caption', encodeURIComponent(cap.value.trim()));
+      x.setRequestHeader('x-name', encodeURIComponent(file.name || ''));
+      bar.style.display = 'block'; go.textContent = 'Sending…';
+      x.upload.onprogress = function(e){ if (e.lengthComputable) fill.style.width = Math.round(e.loaded / e.total * 100) + '%'; };
+      x.onload = function(){
+        var j = {}; try { j = JSON.parse(x.responseText); } catch(e) {}
+        if (x.status === 200 && j.msg) { j.msg.self = 1; liveAdd([j.msg]); close(); requestAnimationFrame(liveToBottom); }
+        else { err.textContent = j.error || 'Upload failed - please try again'; go.disabled = false; go.textContent = 'SEND FOR APPROVAL'; bar.style.display = 'none'; }
+      };
+      x.onerror = function(){ err.textContent = 'No connection - please try again'; go.disabled = false; go.textContent = 'SEND FOR APPROVAL'; bar.style.display = 'none'; };
+      x.send(r.body);
+    }).catch(function(e){ err.textContent = e.message; go.disabled = false; go.textContent = 'SEND FOR APPROVAL'; });
+  };
 }
 function liveConnect(gen){
   if (gen !== LIVE.gen || !LIVE.pass) return;
@@ -655,7 +756,7 @@ function liveConnect(gen){
     if (ev.data === 'pong' || gen !== LIVE.gen) return;
     var m; try { m = JSON.parse(ev.data); } catch(e) { return; }
     var st = document.getElementById('lvStat');
-    if (m.type === 'room') { LIVE.me = m.you || ''; LIVE.open = !!m.open; if (st) st.textContent = ''; liveLock(); }
+    if (m.type === 'room') { if (m.you) LIVE.me = m.you; LIVE.open = !!m.open; LIVE.uploads = !!m.uploads; if (st) st.textContent = ''; liveLock(); }
     else if (m.type === 'chatAll') { LIVE.list = []; LIVE.ids = {}; liveDraw(); liveAdd(m.msgs, true); }
     else if (m.type === 'chatAdd') liveAdd(m.msgs);
     else if (m.type === 'chatDel') { LIVE.list = LIVE.list.filter(function(x){ return x.id !== m.id; }); delete LIVE.ids[m.id]; var b = document.getElementById('lvList'); var el = b && b.querySelector('[data-id="'+m.id+'"]'); if (el) el.remove(); }
@@ -718,6 +819,8 @@ function liveMount(){   // called each time the Live tab is drawn
   liveEnsure(); LIVE.unread = 0;
   liveDraw(); liveLock();
   document.getElementById('lvSend').onclick = liveSend;
+  document.getElementById('lvClip').onclick = function(){ document.getElementById('lvFile').click(); };
+  document.getElementById('lvFile').onchange = function(e){ var f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) livePick(f); };
   document.getElementById('lvMenu').onclick = function(){ window.scrollTo(0, 0); window._tabDockOpen = true; var d = document.getElementById('tabDock'); if (d) d.classList.add('open'); };
   var t = document.getElementById('lvTxt');
   t.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); liveSend(); } });
@@ -1092,7 +1195,7 @@ window.addEventListener('message',function(e){
         '<button class="btn btn-gold" id="loginBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Verifying...':'Sign In')+'</button>' +
       '<div style="text-align:center;margin-top:18px;font-size:13px;color:var(--text-dim);line-height:1.5">Not a member yet? Submit your enrollment <a href="https://laapoa.github.io/Join_membership/" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline">here</a> to have your eligibility evaluated.</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     document.getElementById('loginBtn').addEventListener('click', handleLogin);
         var dobEl=document.getElementById('dob');
     if(dobEl){dobEl.addEventListener('click',function(){try{dobEl.showPicker();}catch(e){}});}
@@ -1136,7 +1239,7 @@ window.addEventListener('message',function(e){
         '<div class="info-row"><span class="info-label">Address</span><span class="info-val" style="white-space:pre-line">'+(fmtAddr?esc(fmtAddr).replace(/\\n/g,'\n'):'—')+'</span></div>' +
         '<div style="margin-top:20px"><button class="btn btn-outline" id="logoutBtn">Sign Out</button></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     document.getElementById('logoutBtn').addEventListener('click', clearSession);
     document.getElementById('editToggle').addEventListener('click', function(){setState({tab:'edit',error:'',success:''});});
@@ -1161,7 +1264,7 @@ window.addEventListener('message',function(e){
           (ds.countdownMs>0?'<div id="countdown" style="margin-top:20px;font-family:\'JetBrains Mono\',monospace;font-size:36px;color:var(--gold);letter-spacing:2px"></div><div style="font-size:11px;color:var(--text-muted);margin-top:6px">until access is restored</div>':'') +
         '</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
 
@@ -1244,7 +1347,7 @@ window.addEventListener('message',function(e){
         '<div class="search-input"><input id="searchQ" type="text" placeholder="Search by name or serial #..." value="'+esc(searchQuery)+'" autocomplete="off"></div>' +
         '<div id="searchResults">' + resultsHtml + '</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
     wireTabEvents();
     const sq = document.getElementById('searchQ');
@@ -1302,7 +1405,7 @@ window.addEventListener('message',function(e){
         tabBar('announce') +
         '<div id="annContent">'+annHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     // Load announcements and birthdays together
@@ -1430,7 +1533,7 @@ window.addEventListener('message',function(e){
         tabBar('events') +
         '<div id="eventsContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading events...</div></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     function loadEvents(){
@@ -1589,7 +1692,7 @@ window.addEventListener('message',function(e){
         tabBar('decide') +
         '<div id="decideContent"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading votes...</div></div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
 
     apiCall('getVotes',{token:state.token,mou:m.mou,cid:m.cid}).then(function(res){
@@ -1820,6 +1923,7 @@ window.addEventListener('message',function(e){
       '<div class="lv-input" id="lvInput">' +
         '<div class="lv-note" id="lvNote"></div>' +
         '<div class="lv-row"><button type="button" class="lv-menu" id="lvMenu" aria-label="Show tabs"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></button>' +
+        '<button type="button" class="lv-clip" id="lvClip" aria-label="Share a photo, video or PDF">📎</button><input type="file" id="lvFile" accept="image/*,video/*,application/pdf" hidden>' +
         '<textarea id="lvTxt" rows="1" maxlength="300" placeholder="Write a message…" enterkeyhint="send"></textarea>' +
         '<button type="button" class="lv-send" id="lvSend">SEND</button></div>' +
       '</div>';
@@ -1840,7 +1944,7 @@ window.addEventListener('message',function(e){
         tabBar('sum') +
         '<iframe id="sumFrame" title="Compensation calculator" src="sum.html?embed=1&mou='+encodeURIComponent(m.mou||'')+'&rank='+encodeURIComponent(m.rank||'')+'&name='+encodeURIComponent(m.name||'')+'" style="width:100%;min-height:700px;border:0;display:block;background:transparent"></iframe>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     return;
   }
@@ -1903,7 +2007,7 @@ window.addEventListener('message',function(e){
         '</div>' +
         '<div id="bbContent">'+bbHtml+'</div>' +
       '</div>' +
-      '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+      '<div class="footer"><span style="opacity:.5">ver 1.2.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
     wireTabEvents();
     // Wire three-dot menu
     document.getElementById('bbMenuBtn').addEventListener('click',function(ev){
@@ -2272,7 +2376,7 @@ window.addEventListener('message',function(e){
         '<button class="btn btn-gold" id="saveBtn"'+(state.loading?' disabled':'')+'>'+(state.loading?'Saving...':'Save Changes')+'</button>' +
       '</div>' +
     '</div>' +
-    '<div class="footer"><span style="opacity:.5">ver 1.2.2</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
+    '<div class="footer"><span style="opacity:.5">ver 1.2.4</span><span>LAAPOA Member Info</span><span style="width:40px"></span></div>';
 
   document.getElementById('saveBtn').addEventListener('click', handleUpdate);
   document.getElementById('cancelBtn').addEventListener('click', ()=>setState({tab:'info',error:'',success:''}));
